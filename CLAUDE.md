@@ -16,6 +16,10 @@ anklicken; es gibt keine Modi und keine Einstellungen, die der Service Point ver
 3. **Vor jeder Übergabe `tests/alle_tests.sh`** – alle Tests müssen bestehen. Neue Funktion = neuer Test.
 4. **CI nur über `programm/marke.js`.** Keine Markenwerte (Farben, Namen, Logo) in der HTML hart
    kodieren. Quelle der Orgalytics-Werte: die internen Markenvorlagen. Nie Farben oder Texte raten.
+   Designsprache (seit 1.2.0, Anker: www.orgalytics.de): weiße Flächen, Haarlinien (`--line`),
+   Radius 2–6 px, keine Karten-Schatten; Aktionsknöpfe (`.btn.primary`) in Textfarbe (`--action`,
+   im Dunkelmodus invertiert), Markenblau NUR als Akzent (Links, Auswahl, Fortschritt, Fokus und
+   das Lora-kursive Akzentwort im Startbildschirm). Überschriften in Geist, Lora nur kursiv als Akzent.
 5. **Kein Build-Schritt für Kunden.** Das Programm muss als entpackter Ordner per file:// laufen.
    Auf oberster Ebene liegt genau EINE Datei (`Unterlagen-Sortierer.html`); release_bauen.sh erzwingt das.
 6. Oberfläche und Texte auf Deutsch, Satzanfang groß, aktive Verben („Dateien umbenennen“, nicht „Absenden“).

@@ -2,6 +2,21 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.2.0 – 2026-11-06
+
+Neues, schlichtes Erscheinungsbild im Orgalytics-Stil (www.orgalytics.de als
+Anker) – an der Bedienung ändert sich nichts:
+
+- Weiße Flächen mit feinen Trennlinien statt grauer Kästen; klare, ruhige
+  Typografie (Geist); abgerundete Ecken und Schatten stark reduziert.
+- Aktionsknöpfe („Ordner wählen“, „Umbenennen“) jetzt in der Textfarbe –
+  wie auf der Website; die Markenfarbe Blau bleibt sparsamer Akzent für
+  Links, Markierungen und den Fortschrittsbalken.
+- Neuer Startbildschirm mit kurzer Erklärung in der Bildsprache der Website.
+- Dunkler Modus entsprechend überarbeitet.
+- Alle Farben kommen weiterhin aus `programm/marke.js` – für andere
+  Kunden-Designs genügt es, diese Datei zu tauschen.
+
 ## 1.1.0 – 2026-11-06
 
 Vereinfachungen nach dem ersten Praxistest – es gibt keine Modi und keine
