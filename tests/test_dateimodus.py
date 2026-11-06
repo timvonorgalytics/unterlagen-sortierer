@@ -1,4 +1,4 @@
-"""Erkennung (Typ + Name) in drei Situationen und ZIP-Export – Programm direkt von der Festplatte (file://) geöffnet."""
+"""Erkennung (Typ + Name) ohne und mit Vorgabe sowie ZIP-Export – Programm direkt von der Festplatte (file://) geöffnet."""
 import asyncio, io, zipfile
 from playwright.async_api import async_playwright
 from _gemeinsam import APP, DOCS, DOCS_DIR, Pruefer
@@ -13,9 +13,8 @@ PERS = {"Foto_Ausweis.jpg": "Mustermann Erika", "Rentenanpassung_digital.pdf": "
         "Scan_0007_Stapel.pdf": "Mustermann Erika", "Scan_0008.pdf": " "}
 P = Pruefer("Dateimodus")
 
-async def run(pg, setup_js=None, plist=None):
+async def run(pg, setup_js=None):
     await pg.goto(APP)
-    if plist: await pg.set_input_files("#plistfile", plist); await pg.wait_for_timeout(200)
     if setup_js: await pg.evaluate(setup_js)
     await pg.set_input_files("#filepick", DOCS)
     await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
@@ -38,14 +37,7 @@ async def main():
             if r['d'] == "Scan_0008.pdf": continue
             P.check(f"Vorgabe überschreibt nicht {r['d']}", r['n'] == PERS[r['d']] and r['src'] != "Vorgabe", f"{r['n']} ({r['src']})")
         P.check("Dateiname Antrag", any(r['neu'] == "Mustermann_Erika_Antrag.pdf" for r in rows))
-        # C) Personenliste
-        rows = await run(pg, plist=str(DOCS_DIR / "personen.csv"))
-        info = await pg.inner_text("#plistinfo"); P.check("Personenliste geladen", "3 Personen" in info, info)
-        for r in rows:
-            if r['d'] == "Scan_0008.pdf": continue
-            P.check(f"Liste {r['d']}", r['src'] == "Personenliste" and r['n'] in ("Mustermann Erika", "Mustermann Hans"), f"{r['n']} {r['src']}")
-        P.check("Rentenbescheid → Hans", next(r for r in rows if r['d'] == "Scan_0004.pdf")['n'] == "Mustermann Hans")
-        # D) manuelle Korrektur + ZIP
+        # C) manuelle Korrektur + ZIP
         await pg.fill("tbody tr:nth-child(10) input.name >> nth=0", "Mustermann")
         await pg.fill("tbody tr:nth-child(10) input.name >> nth=1", "Erika")
         await pg.select_option("tbody tr:nth-child(10) select", "Kontoauszug")

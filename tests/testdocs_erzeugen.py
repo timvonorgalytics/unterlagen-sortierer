@@ -74,7 +74,6 @@ for i, l in enumerate(["Herrn", "Hans Mustermann", "Lindenweg 4", "12345 Musters
   "Mitteilung über die Anpassung Ihrer Rente", "Ihre Rente erhöht sich ab 01.07.2026 auf 1.012,40 EUR."]):
     c.drawString(70, 740 - i*16, l)
 c.save()
-open("personen.csv", "w", encoding="utf-8").write("Nachname;Vorname\nMustermann;Erika\nMustermann;Hans\nSchulz;Karin\n")
 
 # Stapel-Scan: Antrag (2 Seiten), eine LEERE Rückseite, Kontoauszug (2 Seiten) in EINER Datei
 # → zum Testen der Funktionen „Teilen“ und „leere Seiten weglassen“

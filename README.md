@@ -17,7 +17,7 @@ direkt per Drag & Drop in die eAkte ziehen, wo der Dateiname sofort sagt, was dr
 ## Funktionen
 
 - **Erkennen & Umbenennen:** Dokumenttyp über editierbare Suchbegriffe (24 Typen ab Werk),
-  Person über Personenliste, Formularfelder, Anschrift, Absender oder Briefanrede;
+  Person über Formularfelder, Anschrift, Absender oder Briefanrede;
   Dateinamen-Muster frei kombinierbar; Ampel-Status je Datei, alles von Hand korrigierbar
 - **Stapel-Scans teilen:** Seitenvorschau mit Zoom, automatisch vorgeschlagene Trennstellen,
   leere Rückseiten werden erkannt und weggelassen — Originale bleiben unverändert

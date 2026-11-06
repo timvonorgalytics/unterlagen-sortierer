@@ -100,12 +100,6 @@ DATEIEN ZUSAMMENFÜHREN
   markiert - dann bitte den Typ selbst wählen.
   "Verwerfen" entfernt eine neu erstellte Datei wieder aus der Liste.
 
-PERSONENLISTE (optional)
-  Eine CSV-Datei mit den Spalten Nachname;Vorname, z. B. aus Excel
-  ("Speichern unter" -> "CSV (Trennzeichen-getrennt)").
-  Das Programm ordnet dann jedes Dokument der passenden Person zu,
-  z. B. bei Ehepaaren. Die Liste wird nicht gespeichert.
-
 DATEINAME ANPASSEN
   Im Feld "Neuer Dateiname" können Sie die Bausteine frei kombinieren:
   {Nachname} {Vorname} {Dokumenttyp} {Datum} {Original}

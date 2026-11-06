@@ -343,11 +343,6 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
       <input type="text" id="vVor" placeholder="Vorname" autocomplete="off" aria-label="Vorname des Antragstellers">
     </div>
     <p class="hint">Wird nur verwendet, wenn im Dokument kein Name erkannt wird. Erkannte Namen bleiben erhalten.</p>
-    <div class="field" style="margin-top:10px">
-      <button class="btn" id="plist">Personenliste laden</button>
-      <input type="file" id="plistfile" accept=".csv,.txt,text/csv,text/plain" class="hidden">
-      <span class="hint" id="plistinfo" style="margin:6px 0 0">Optional: CSV mit Nachname;Vorname</span>
-    </div>
   </div>
 
   <div>
@@ -459,7 +454,7 @@ const TYPES = R ? R.dokumenttypen.map((t) => t.name) : [];
 const UNKNOWN = (R && R.unbekannt) || "Sonstiges";
 const PLACEHOLDERS = ["{Nachname}", "{Vorname}", "{Dokumenttyp}", "{Datum}", "{Original}"];
 
-const state = { dir: null, items: [], persons: [], busy: false, running: 0, done: new Set() };
+const state = { dir: null, items: [], busy: false, running: 0, done: new Set() };
 
 /* ---------- Einstellungen (nur Programm-Einstellungen, keine Personendaten) ---------- */
 const store = {
@@ -646,18 +641,7 @@ function okWord(w) { return w && w.length > 1 && !STOPWORDS.has(w.toLowerCase())
 
 function findName(text) {
   const vN = $("#vNach").value.trim(), vV = $("#vVor").value.trim();
-  const n = norm(text);
-  // 1) Personenliste
-  if (state.persons.length) {
-    let best = null;
-    for (const p of state.persons) {
-      const nn = norm(p.nachname), vn = norm(p.vorname);
-      const pos = n.indexOf(nn);
-      if (pos >= 0 && (!vn.trim() || n.includes(vn)) && (!best || pos < best.pos)) best = { p, pos };
-    }
-    if (best) return { nachname: best.p.nachname, vorname: best.p.vorname, src: "Personenliste", sure: true };
-  }
-  // 3) Formularfelder
+  // 1) Formularfelder
   let m = text.match(new RegExp("Name\\s*,\\s*Vorname[^\\S\\n]*:?[^\\S\\n]*(" + W + ")\\s*,\\s*(" + W + ")"));
   if (m && okWord(m[1]) && okWord(m[2])) return { nachname: titleCase(m[1]), vorname: titleCase(m[2]), src: "Formularfeld", sure: true };
   // Beschriftung und Wert dürfen auch untereinander stehen (Formular-Tabellen), daher optional ein Zeilenumbruch
@@ -670,7 +654,7 @@ function findName(text) {
   m = text.match(new RegExp("(?:^|[^A-Za-zäöüß])(?:Mieter(?:in)?|Patient(?:in)?|Kontoinhaber(?:in)?|Versicherungsnehmer(?:in)?)[^\\S\\n]*:?[^\\S\\n]*(" + W + ")(?:[^\\S\\n]+(" + W + "))?[^\\S\\n]+(" + W + ")"));
   if (m && okWord(m[1]) && okWord(m[3]) && !STRASSE.test(m[3]))
     return { nachname: titleCase(m[3]), vorname: titleCase(m[1]) + (m[2] && okWord(m[2]) ? " " + titleCase(m[2]) : ""), src: "Formularfeld", sure: true };
-  // 4) Anschrift / Anrede: "Herrn" steht oft allein in einer Zeile, darunter der Name (auch mit Leerzeilen dazwischen)
+  // 2) Anschrift / Anrede: "Herrn" steht oft allein in einer Zeile, darunter der Name (auch mit Leerzeilen dazwischen)
   const SAL = "(?:Herrn|Herr|Frau)(?:\\s+und\\s+(?:Herrn|Herr|Frau))?";
   const t2 = text.replace(new RegExp("(^|\\n)[^\\S\\n]*(" + SAL + ")[^\\S\\n]*\\n\\s*", "g"), "$1$2 ");
   const re = new RegExp("(?:^|[^A-Za-zäöüß])" + SAL + "\\s+(?:Dr\\.\\s*)?(" + W + ")(?:\\s+und\\s+" + W + ")?\\s+(" + W + ")(?:[^\\S\\n]+(" + W + "))?");
@@ -688,7 +672,7 @@ function findName(text) {
       return { nachname: titleCase(a[2]), vorname: titleCase(a[1]), src: "Anschrift", sure: false };
     }
   }
-  // 5) Absenderblock: Name allein in einer Zeile, direkt darüber von Straße + Hausnummer gefolgt
+  // 3) Absenderblock: Name allein in einer Zeile, direkt darüber von Straße + Hausnummer gefolgt
   const reAbs = new RegExp("^(" + W + ")(?:[^\\S\\n]+(" + W + "))?[^\\S\\n]+(" + W + ")[^\\S\\n]*$");
   const rawLines = text.split("\n");
   for (let i = 0; i < rawLines.length; i++) {
@@ -700,10 +684,10 @@ function findName(text) {
     if (/(?:weg|straße|strasse|str\.|gasse|allee|platz|ring|damm|ufer)\s+\d{1,4}/i.test(next))
       return { nachname: titleCase(a[3]), vorname: titleCase(a[1]) + (a[2] && okWord(a[2]) ? " " + titleCase(a[2]) : ""), src: "Absender", sure: false };
   }
-  // 6) Briefanrede („Sehr geehrte Frau Brandt“) – nur Nachname
+  // 4) Briefanrede („Sehr geehrte Frau Brandt“) – nur Nachname
   m = text.match(new RegExp("Sehr\\s+geehrte[rs]?\\s+(?:Frau|Herrn?)\\s+(?:Dr\\.\\s*)?(" + W + ")"));
   if (m && okWord(m[1])) return { nachname: titleCase(m[1]), vorname: "", src: "Anrede", sure: false };
-  // 7) Vorgabe: nur als Lückenfüller, wenn im Dokument KEIN Name erkannt wurde –
+  // 5) Vorgabe: nur als Lückenfüller, wenn im Dokument KEIN Name erkannt wurde –
   //    bei Stapeln mit mehreren Personen wird so nichts überschrieben
   if (vN) return { nachname: vN, vorname: vV, src: "Vorgabe", sure: true };
   return { nachname: "", vorname: "", src: "nicht gefunden", sure: false };
@@ -1608,21 +1592,6 @@ async function applyZip(sel, log, now) {
   setStatus(`${sel.length} Dateien in die ZIP-Datei gepackt. Sie liegt in Ihrem Download-Ordner.`);
 }
 
-/* ---------- Personenliste ---------- */
-function parsePersons(txt) {
-  const lines = txt.replace(/^\ufeff/, "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  if (!lines.length) return [];
-  const sep = [";", "\t", ","].find((s) => lines[0].includes(s)) || ";";
-  let rows = lines.map((l) => l.split(sep).map((c) => c.replace(/^"|"$/g, "").trim()));
-  let iN = 0, iV = 1;
-  const head = rows[0].map((c) => c.toLowerCase());
-  if (head.some((c) => /name/.test(c))) {
-    const a = head.findIndex((c) => /nach|familien/.test(c) || c === "name"), b = head.findIndex((c) => /vor/.test(c));
-    if (a >= 0) iN = a; if (b >= 0) iV = b; rows = rows.slice(1);
-  }
-  return rows.filter((r) => r[iN]).map((r) => ({ nachname: r[iN], vorname: r[iV] || "" }));
-}
-
 /* ---------- Start ---------- */
 function applyBrand() {
   const M = window.MARKE; if (!M) return;
@@ -1665,16 +1634,6 @@ function init() {
   $("#rulesclose").onclick = () => $("#rulesdlg").close();
   let deb; const re = () => { clearTimeout(deb); deb = setTimeout(reanalyseAll, 250); };
   $("#vNach").oninput = re; $("#vVor").oninput = re;
-  $("#plist").onclick = () => $("#plistfile").click();
-  $("#plistfile").onchange = async (e) => {
-    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
-    const buf = await f.arrayBuffer();
-    let txt = new TextDecoder("utf-8").decode(buf);
-    if (txt.includes("\ufffd")) txt = new TextDecoder("windows-1252").decode(buf);
-    state.persons = parsePersons(txt);
-    $("#plistinfo").textContent = state.persons.length ? `${state.persons.length} Personen geladen` : "Keine Namen in der Datei gefunden";
-    reanalyseAll();
-  };
   $("#all").onchange = (e) => { state.items.forEach((i) => { i.selected = e.target.checked; renderRow(i); }); updateActions(); };
   $("#apply").onclick = apply;
   $("#onlycheck").onchange = () => state.items.forEach(applyRowFilter);

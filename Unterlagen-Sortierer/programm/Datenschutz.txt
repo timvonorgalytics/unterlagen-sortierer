@@ -22,7 +22,6 @@ KEINE SPEICHERUNG VON PERSONENDATEN DURCH DAS PROGRAMM
   Schließen des Browsers weg. Im Browser dauerhaft gespeichert
   werden ausschließlich Programmeinstellungen (z. B. das
   Dateinamen-Muster) - niemals Namen oder Inhalte.
-  Eine geladene Personenliste wird nicht gespeichert.
 
 ALLE DATEIEN BLEIBEN BEIM KUNDEN
   Umbenannte Dateien, Unterordner und das Protokoll-CSV entstehen

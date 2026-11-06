@@ -63,7 +63,7 @@ VERSION            Versionsnummer für das Release-ZIP
 - **classify:** Begriffe aus regeln.js, normalisiert (`norm()`: klein, ä→ae, ß→ss, nur a-z0-9).
   `stark` = 3 Punkte, `schwach` = 1; im Kopf der Seite (erste 450 Zeichen) ×1,5.
   „Sicher“ wenn ≥ 3 Punkte und ≥ 1,5× der Zweitplatzierte.
-- **findName (Reihenfolge):** Personenliste (CSV) → Formularfelder
+- **findName (Reihenfolge):** Formularfelder
   („Name, Vorname:“; „Familienname/Nachname“ und „Vorname(n)“ auch mit Wert in der NÄCHSTEN Zeile
   (Formular-Tabellen) und mit zwei Vornamen; beschriftete Voll-Namen-Felder Mieter(in)/Patient(in)/
   Kontoinhaber(in)/Versicherungsnehmer(in)) → Anschrift („Herrn/Frau“, auch allein in einer Zeile mit
@@ -161,7 +161,7 @@ python3 tests/test_dateimodus.py                       # einzelner Test
 
 | Test | Prüft |
 | --- | --- |
-| test_dateimodus.py | Typ + Name aller Testunterlagen ohne Vorgabe, mit Vorgabe, mit Personenliste; manuelle Korrektur; ZIP-Export |
+| test_dateimodus.py | Typ + Name aller Testunterlagen ohne und mit Vorgabe; manuelle Korrektur; ZIP-Export |
 | test_namen.py | findName direkt auf Textproben (zwei Vornamen, Formular-Tabellen, beschriftete Felder, Absender, Anrede) |
 | test_regeln.py | classify auf Textproben (neue Praxis-Typen + Regressionen), Drag & Drop, Filter, Regeln-Dialog |
 | test_teilen.py | Stapel-Scan: Mehrtyp-Hinweis, Trennvorschlag, leere Seite erkannt/weggelassen, Trennstelle von Hand, Teilen, ZIP + Protokoll-Hinweis; Zusammenführen PDF+JPG, Verwerfen |

@@ -16,6 +16,9 @@ Anker) – an der Bedienung ändert sich nichts:
 - Dunkler Modus entsprechend überarbeitet.
 - Alle Farben kommen weiterhin aus `programm/marke.js` – für andere
   Kunden-Designs genügt es, diese Datei zu tauschen.
+- Entfernt: „Personenliste laden“ (CSV). Die Funktion wurde in der Praxis
+  nicht gebraucht; die Namenserkennung aus dem Dokument selbst bleibt
+  unverändert.
 
 ## 1.1.0 – 2026-11-06
 
