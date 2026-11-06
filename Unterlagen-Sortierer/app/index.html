@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unterlagen-Sortierer</title>
+<link rel="stylesheet" href="lib/fonts.css">
+<style>
+:root {
+  /* Markenwerte – werden aus marke.js überschrieben */
+  --brand: #2f6fa3;
+  --brand-ink: #0f0f0f;
+  --brand-muted: #6b7280;
+  --brand-line: #e5e5e5;
+  --font-text: "Geist", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-title: "Lora", Georgia, "Times New Roman", serif;
+
+  --paper: #fafafa;
+  --sheet: #ffffff;
+  --ink: var(--brand-ink);
+  --muted: var(--brand-muted);
+  --line: var(--brand-line);
+  --accent: var(--brand);
+  --accent-ink: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--brand) 9%, white);
+  --ok: #1f7a4a;
+  --ok-bg: #e6f4ec;
+  --check: #8a5300;
+  --check-bg: #fdf1dc;
+  --miss: #b42318;
+  --miss-bg: #fdecea;
+  --focus: var(--brand);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: var(--brand-ink);
+    --sheet: #191919;
+    --ink: #f2f2f2;
+    --muted: #a3a9b2;
+    --line: #2c2c2c;
+    --accent: color-mix(in srgb, var(--brand) 62%, white);
+    --accent-ink: #0f0f0f;
+    --accent-soft: color-mix(in srgb, var(--brand) 22%, #191919);
+    --ok: #6ccb95;
+    --ok-bg: #16301f;
+    --check: #e6b25a;
+    --check-bg: #36290f;
+    --miss: #f19389;
+    --miss-bg: #3a1a18;
+    --focus: color-mix(in srgb, var(--brand) 62%, white);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.5 var(--font-text);
+  font-variant-numeric: tabular-nums;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* Kopf */
+.top {
+  display: flex; align-items: center; gap: 14px 24px; flex-wrap: wrap;
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--line);
+  background: var(--sheet);
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand .logo { display: flex; height: 34px; }
+.brand .logo svg, .brand .logo img { height: 100%; width: auto; }
+.brand .logo:empty { display: none; }
+.brand h1 { margin: 0; font: 600 24px/1.15 var(--font-title); letter-spacing: -0.005em; }
+.brand .by { display: block; font: 500 12.5px/1.3 var(--font-text); color: var(--muted); margin-top: 3px; }
+.top .safe { margin-left: auto; color: var(--muted); font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+.top .safe svg { flex: none; color: var(--ok); }
+.brandnote { text-align: center; color: var(--muted); font-size: 12.5px; margin: 28px 0 0; }
+
+/* Einstellungen */
+.setup {
+  background: var(--paper);
+  display: grid; gap: 18px 28px;
+  grid-template-columns: auto minmax(240px, 1fr) minmax(260px, 1.2fr);
+  padding: 22px 32px;
+  border-bottom: 1px solid var(--line);
+}
+.setup > div { min-width: 0; }
+.label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+.btn {
+  border: 1px solid var(--line); background: var(--sheet); border-radius: 8px; font-weight: 500;
+  padding: 8px 14px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+.btn.big { padding: 11px 20px; font-size: 16px; }
+.field { display: flex; gap: 8px; flex-wrap: wrap; }
+.field input[type=text], .field select {
+  border: 1px solid var(--line); background: var(--sheet); border-radius: 6px; padding: 7px 10px; min-width: 0;
+}
+.field input[type=text] { flex: 1 1 120px; }
+.hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.chip { font-size: 12.5px; border: 1px dashed var(--line); background: transparent; border-radius: 4px; padding: 2px 7px; cursor: pointer; color: var(--muted); }
+.chip:hover { color: var(--ink); border-color: var(--accent); }
+.radio { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; font-size: 14px; }
+.radio label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.folder { margin-top: 8px; font-size: 14px; word-break: break-all; }
+.folder strong { font-weight: 600; }
+
+/* Status */
+.status { padding: 14px 32px 0; min-height: 46px; }
+.bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: 8px; max-width: 520px; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.msg { font-size: 14px; }
+.msg.error { color: var(--miss); font-weight: 600; }
+
+/* Liste */
+.list { padding: 10px 32px 120px; }
+.empty {
+  background: var(--sheet);
+  border: 1.5px dashed color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: 10px; padding: 48px 24px; text-align: center; color: var(--muted);
+  max-width: 760px; margin: 24px auto;
+}
+.empty p { margin: 6px 0; }
+.tablewrap { overflow-x: auto; background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 980px; }
+th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 10px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--paper); }
+td { padding: 10px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+tr.skip td { opacity: .45; }
+td.sel { width: 36px; padding-top: 16px; }
+td.thumb { width: 64px; }
+.thumbbox {
+  width: 52px; height: 68px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper);
+  display: grid; place-items: center; overflow: hidden; cursor: pointer; padding: 0;
+}
+.thumbbox img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.orig { font-size: 13.5px; word-break: break-all; max-width: 220px; }
+.orig small { display: block; color: var(--muted); margin-top: 2px; }
+
+/* Registerreiter für Dokumenttypen */
+.tab {
+  --h: 210;
+  position: relative; display: inline-flex; align-items: center;
+  background: hsl(var(--h) 45% 94%); color: hsl(var(--h) 45% 24%);
+  border-left: 4px solid hsl(var(--h) 45% 46%);
+  border-radius: 0 6px 6px 0; padding: 0 4px 0 0; max-width: 220px;
+}
+@media (prefers-color-scheme: dark) {
+  .tab { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); border-left-color: hsl(var(--h) 45% 60%); }
+}
+.tab select {
+  appearance: none; -webkit-appearance: none; border: 0; background: transparent; font-weight: 600; font-size: 14px;
+  padding: 5px 22px 5px 9px; cursor: pointer; max-width: 100%;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 10px top 50%, right 6px top 50%; background-size: 4px 4px; background-repeat: no-repeat;
+}
+.tab select option { color: var(--ink); background: var(--sheet); }
+.why { font-size: 12.5px; color: var(--muted); margin-top: 5px; max-width: 220px; }
+
+td input.name {
+  width: 100%; min-width: 110px; border: 1px solid var(--line); background: var(--sheet); border-radius: 5px; padding: 5px 8px;
+}
+td input.name:invalid, td input.name.missing { border-color: var(--miss); background: var(--miss-bg); }
+.src { font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+.newname { font-size: 13.5px; font-weight: 600; word-break: break-all; max-width: 300px; }
+.newname.dim { font-weight: 400; color: var(--muted); }
+.state { display: inline-block; font-size: 12.5px; font-weight: 600; border-radius: 4px; padding: 2px 8px; white-space: nowrap; }
+.state.ok { color: var(--ok); background: var(--ok-bg); }
+.state.check { color: var(--check); background: var(--check-bg); }
+.state.miss { color: var(--miss); background: var(--miss-bg); }
+.state.wait { color: var(--muted); background: var(--paper); }
+details { margin-top: 6px; }
+details summary { font-size: 12.5px; color: var(--accent); cursor: pointer; font-weight: 500; }
+details pre {
+  white-space: pre-wrap; font: 12.5px/1.4 Consolas, "Cascadia Mono", monospace; max-height: 220px; overflow: auto;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 5px; padding: 8px; margin: 6px 0 0; max-width: 520px;
+}
+
+/* Aktionsleiste */
+.actions {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  padding: 14px 32px; background: var(--sheet); border-top: 1px solid var(--line);
+}
+.actions .summary { font-size: 14px; flex: 1 1 260px; }
+.actions .summary b { font-weight: 650; }
+.hidden { display: none !important; }
+
+@media (max-width: 900px) {
+  .setup { grid-template-columns: 1fr; padding: 18px; }
+  .top, .status, .list, .actions { padding-left: 18px; padding-right: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo" id="logo"></span>
+    <div><h1 id="produkt">Unterlagen-Sortierer</h1><span class="by" id="firma">von Orgalytics</span></div>
+  </div>
+  <span class="safe">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Zm-1 10L4.3 8.3l1.1-1.1L7 8.8l3.6-3.6 1.1 1.1L7 11Z"/></svg>
+    Alles wird auf diesem Rechner verarbeitet. Es werden keine Daten übertragen.
+  </span>
+</header>
+
+<section class="setup" aria-label="Einstellungen">
+  <div>
+    <span class="label">Unterlagen</span>
+    <button class="btn primary big" id="pick">Ordner wählen</button>
+    <input type="file" id="filepick" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="hidden">
+    <div class="folder" id="folder"></div>
+  </div>
+
+  <div>
+    <span class="label">Antragsteller (gilt für alle Dateien)</span>
+    <div class="field">
+      <input type="text" id="vNach" placeholder="Nachname" autocomplete="off" aria-label="Nachname des Antragstellers">
+      <input type="text" id="vVor" placeholder="Vorname" autocomplete="off" aria-label="Vorname des Antragstellers">
+    </div>
+    <p class="hint">Leer lassen, wenn der Name aus den Dokumenten gelesen werden soll.</p>
+    <div class="field" style="margin-top:10px">
+      <button class="btn" id="plist">Personenliste laden</button>
+      <input type="file" id="plistfile" accept=".csv,.txt,text/csv,text/plain" class="hidden">
+      <span class="hint" id="plistinfo" style="margin:6px 0 0">Optional: CSV mit Nachname;Vorname</span>
+    </div>
+  </div>
+
+  <div>
+    <span class="label">Neuer Dateiname</span>
+    <div class="field"><input type="text" id="muster" aria-label="Muster für den Dateinamen" spellcheck="false"></div>
+    <div class="chips" id="chips"></div>
+    <div class="radio" id="ablage" role="radiogroup" aria-label="Ablage">
+      <label><input type="radio" name="ablage" value="kopie"> Kopien im Unterordner „umbenannt“ speichern (Originale bleiben)</label>
+      <label><input type="radio" name="ablage" value="umbenennen"> Originaldateien umbenennen</label>
+    </div>
+    <div class="field" style="margin-top:10px; align-items:center">
+      <label class="hint" for="seiten" style="margin:0">Seiten pro Dokument auswerten</label>
+      <select id="seiten"><option>1</option><option>2</option><option>3</option><option>5</option></select>
+    </div>
+  </div>
+</section>
+
+<div class="status" id="status" aria-live="polite"></div>
+
+<main class="list" id="list">
+  <div class="empty" id="empty">
+    <p><strong>Wählen Sie den Ordner mit den eingescannten Unterlagen.</strong></p>
+    <p>Gelesen werden PDF-, JPG- und PNG-Dateien. Sie prüfen die Vorschläge, bevor etwas umbenannt wird.</p>
+  </div>
+  <div class="tablewrap hidden" id="tablewrap">
+    <table>
+      <thead><tr>
+        <th><input type="checkbox" id="all" checked aria-label="Alle auswählen"></th>
+        <th></th><th>Datei</th><th>Dokumenttyp</th><th>Nachname</th><th>Vorname</th><th>Neuer Name</th><th>Status</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <p class="brandnote hidden" id="brandnote"></p>
+</main>
+
+<footer class="actions hidden" id="actions">
+  <div class="summary" id="summary"></div>
+  <button class="btn primary big" id="apply" disabled>Umbenennen</button>
+</footer>
+
+<script src="../marke.js"></script>
+<script src="../regeln.js"></script>
+<script src="lib/pdf.min.js"></script>
+<script src="lib/tesseract.min.js"></script>
+<script src="lib/tess-worker.js"></script>
+<script src="lib/deu.js"></script>
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const R = window.REGELN || null;
+const FS = typeof window.showDirectoryPicker === "function";
+const TYPES = R ? R.dokumenttypen.map((t) => t.name) : [];
+const UNKNOWN = (R && R.unbekannt) || "Sonstiges";
+const PLACEHOLDERS = ["{Nachname}", "{Vorname}", "{Dokumenttyp}", "{Datum}", "{Original}"];
+
+const state = { dir: null, items: [], persons: [], busy: false, running: 0 };
+
+/* ---------- Einstellungen (nur Programm-Einstellungen, keine Personendaten) ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("us." + k); return v === null ? d : v; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("us." + k, v); } catch {} },
+};
+function setting(name) {
+  if (name === "muster") return $("#muster").value.trim() || (R && R.dateiname) || "{Nachname}_{Vorname}_{Dokumenttyp}";
+  if (name === "ablage") return (document.querySelector("input[name=ablage]:checked") || {}).value || "kopie";
+  if (name === "seiten") return parseInt($("#seiten").value, 10) || 2;
+}
+
+/* ---------- Hilfsfunktionen ---------- */
+function norm(s) {
+  return (" " + String(s || "").toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/-\s*\n\s*/g, "")
+    .replace(/[^a-z0-9]+/g, " ") + " ").replace(/\s+/g, " ");
+}
+function titleCase(w) {
+  if (!w) return w;
+  if (w === w.toUpperCase()) w = w.toLowerCase();
+  return w.replace(/(^|[-\s])([a-zäöü])/g, (m, a, b) => a + b.toUpperCase());
+}
+// Farbtöne für die Registerreiter – bewusst ohne Rot und Gelb, damit nichts wie eine Warnung aussieht
+const HUES = [205, 222, 240, 258, 275, 292, 308, 182, 168, 150, 132, 195];
+function hue(name) {
+  let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return HUES[h % HUES.length];
+}
+function b64ToBytes(b64) {
+  const bin = atob(b64); const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function bytesToURL(bytes, type) { return URL.createObjectURL(new Blob([bytes], { type })); }
+function loadScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Datei fehlt: " + src)); document.head.appendChild(s); });
+}
+function setStatus(text, progress, isError) {
+  const el = $("#status"); el.innerHTML = "";
+  const m = document.createElement("div"); m.className = "msg" + (isError ? " error" : ""); m.textContent = text; el.appendChild(m);
+  if (typeof progress === "number") {
+    const b = document.createElement("div"); b.className = "bar"; const i = document.createElement("i"); i.style.width = Math.round(progress * 100) + "%"; b.appendChild(i); el.appendChild(b);
+  }
+}
+
+/* ---------- PDF ---------- */
+let pdfReady = null;
+function pdfLib() {
+  if (!pdfReady) pdfReady = (async () => {
+    // Worker im Hauptprogramm ausführen: funktioniert auch beim Öffnen direkt von der Festplatte
+    await loadScript("lib/pdf.worker.min.js");
+    return window.pdfjsLib;
+  })();
+  return pdfReady;
+}
+
+/* ---------- Texterkennung ---------- */
+let ocrReady = null;
+function ocr() {
+  if (!ocrReady) ocrReady = withTimeout((async () => {
+    const simd = WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]));
+    await loadScript(simd ? "lib/tess-core-simd.js" : "lib/tess-core.js");
+    // Sprachdaten, Kern und Worker in einem Paket: Beim Öffnen von der Festplatte darf der Worker nichts nachladen
+    const offline = 'self.fetch = function (u) {' +
+      ' if (String(u).indexOf("deu.traineddata") >= 0) { var b = atob(self.__DEU), a = new Uint8Array(b.length);' +
+      ' for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return Promise.resolve(new Response(a)); }' +
+      ' return Promise.reject(new Error("offline")); };\n';
+    const workerURL = URL.createObjectURL(new Blob([
+      'self.__DEU="', window.TESS_DEU_B64, '";\n', offline,
+      b64ToBytes(simd ? window.TESS_CORE_SIMD_B64 : window.TESS_CORE_B64), "\n;\n",
+      b64ToBytes(window.TESS_WORKER_B64)
+    ], { type: "application/javascript" }));
+    const n = Math.max(1, Math.min(3, Math.floor((navigator.hardwareConcurrency || 2) / 2)));
+    const scheduler = Tesseract.createScheduler();
+    let failed = null;
+    for (let i = 0; i < n; i++) {
+      const w = await withTimeout(Tesseract.createWorker("deu", 1, {
+        workerPath: workerURL, corePath: "eingebettet.js", workerBlobURL: false,
+        langPath: "https://offline.invalid", cacheMethod: "none",
+        errorHandler: (e) => { failed = e; console.error(e); },
+      }), 120000);
+      if (failed) throw failed;
+      scheduler.addWorker(w);
+    }
+    return scheduler;
+  })(), 180000).catch((e) => { ocrReady = null; throw new Error("Die Texterkennung konnte nicht gestartet werden. " + (e && e.message || "")); });
+  return ocrReady;
+}
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("Zeitüberschreitung")), ms))]);
+}
+
+/* ---------- Text aus einer Datei holen ---------- */
+async function readText(item) {
+  const file = item.file || await item.handle.getFile();
+  item.size = file.size;
+  const ext = item.name.split(".").pop().toLowerCase();
+  let text = "", ocrUsed = false;
+  if (ext === "pdf") {
+    const pdfjs = await pdfLib();
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    item.pages = doc.numPages;
+    const last = Math.min(doc.numPages, setting("seiten"));
+    for (let p = 1; p <= last; p++) {
+      const page = await doc.getPage(p);
+      const tc = await page.getTextContent();
+      const t = tc.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join("");
+      let canvas = null;
+      if (p === 1 || t.replace(/\s/g, "").length < 40) {
+        const base = page.getViewport({ scale: 1 });
+        const scale = Math.max(1, Math.min(2.5, 2600 / Math.max(base.width, base.height)));
+        const vp = page.getViewport({ scale });
+        canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+        const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        if (p === 1) item.thumb = thumbnail(canvas);
+      }
+      if (t.replace(/\s/g, "").length >= 40) text += t + "\n";
+      else { const r = await (await ocr()).addJob("recognize", canvas); text += r.data.text + "\n"; ocrUsed = true; }
+      page.cleanup();
+    }
+    await doc.destroy();
+  } else {
+    const bmp = await createImageBitmap(file);
+    const f = Math.min(1, 3000 / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas"); canvas.width = Math.round(bmp.width * f); canvas.height = Math.round(bmp.height * f);
+    canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    item.thumb = thumbnail(canvas); item.pages = 1;
+    const r = await (await ocr()).addJob("recognize", canvas); text = r.data.text; ocrUsed = true;
+  }
+  item.ocr = ocrUsed;
+  return text;
+}
+function thumbnail(canvas) {
+  const w = 104, h = Math.round(canvas.height * (w / canvas.width));
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  c.getContext("2d").drawImage(canvas, 0, 0, w, h);
+  return c.toDataURL("image/jpeg", 0.7);
+}
+
+/* ---------- Dokumenttyp bestimmen ---------- */
+function classify(text) {
+  const n = norm(text), head = norm(text.slice(0, 450));
+  const scores = R.dokumenttypen.map((t) => {
+    let s = 0; const hits = [];
+    for (const [list, w] of [[t.stark || [], 3], [t.schwach || [], 1]]) {
+      for (const kw of list) {
+        const k = norm(kw); if (k.trim().length < 2) continue;
+        if (n.includes(k)) { s += head.includes(k) ? w * 1.5 : w; hits.push(kw); }
+      }
+    }
+    return { name: t.name, s, hits };
+  }).sort((a, b) => b.s - a.s);
+  const [a, b] = scores;
+  if (!a || a.s === 0) return { type: UNKNOWN, sure: false, why: "Keine passenden Begriffe gefunden" };
+  const sure = a.s >= 3 && a.s >= (b ? b.s : 0) * 1.5;
+  return { type: a.name, sure, why: "Erkannt an: " + a.hits.slice(0, 3).join(", ") };
+}
+
+/* ---------- Name bestimmen ---------- */
+const W = "[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+(?:-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+)?";
+const NOT_PERSON = /ansprechpartner|sachbearbeit|bearbeiter|zust[aä]ndig|gez\.|i\. ?a\.|telefon|durchwahl|e-mail|vermieter|geschäftsführ|vorstand|berater/i;
+const STOPWORDS = new Set(["und", "oder", "mit", "der", "die", "das", "den", "dem", "des", "von", "zu", "im", "in", "am", "an", "geb", "geboren", "sehr", "geehrte", "geehrter", "nr", "straße", "strasse", "str"]);
+function okWord(w) { return w && w.length > 1 && !STOPWORDS.has(w.toLowerCase()); }
+
+function findName(text) {
+  const vN = $("#vNach").value.trim(), vV = $("#vVor").value.trim();
+  const n = norm(text);
+  // 1) Personenliste
+  if (state.persons.length) {
+    let best = null;
+    for (const p of state.persons) {
+      const nn = norm(p.nachname), vn = norm(p.vorname);
+      const pos = n.indexOf(nn);
+      if (pos >= 0 && (!vn.trim() || n.includes(vn)) && (!best || pos < best.pos)) best = { p, pos };
+    }
+    if (best) return { nachname: best.p.nachname, vorname: best.p.vorname, src: "Personenliste", sure: true };
+  }
+  // 2) Vorgabe für alle Dateien
+  if (vN) return { nachname: vN, vorname: vV, src: "Vorgabe", sure: true };
+  // 3) Formularfelder
+  let m = text.match(new RegExp("Name\\s*,\\s*Vorname[^\\S\\n]*:?[^\\S\\n]*(" + W + ")\\s*,\\s*(" + W + ")"));
+  if (m && okWord(m[1]) && okWord(m[2])) return { nachname: titleCase(m[1]), vorname: titleCase(m[2]), src: "Formularfeld", sure: true };
+  const fn = text.match(new RegExp("(?:Familienname|Nachname)(?:\\s*\\(.*?\\))?[^\\S\\n]*:?[^\\S\\n]*(" + W + ")"))
+         || (/Vorname/.test(text) && text.match(new RegExp("(?:^|\\n)[^\\S\\n]*Name[^\\S\\n]*:[^\\S\\n]*(" + W + ")[^\\S\\n]*(?=\\n|$)")));
+  const vn = text.match(new RegExp("Vorname(?:\\(n\\)|n)?[^\\S\\n]*:?[^\\S\\n]*(" + W + ")"));
+  if (fn && okWord(fn[1])) return { nachname: titleCase(fn[1]), vorname: vn && okWord(vn[1]) ? titleCase(vn[1]) : "", src: "Formularfeld", sure: !!vn };
+  // 4) Anschrift / Anrede: "Herrn" steht oft allein in einer Zeile, darunter der Name (auch mit Leerzeilen dazwischen)
+  const SAL = "(?:Herrn|Herr|Frau)(?:\\s+und\\s+(?:Herrn|Herr|Frau))?";
+  const t2 = text.replace(new RegExp("(^|\\n)[^\\S\\n]*(" + SAL + ")[^\\S\\n]*\\n\\s*", "g"), "$1$2 ");
+  const re = new RegExp("(?:^|[^A-Za-zäöüß])" + SAL + "\\s+(?:Dr\\.\\s*)?(" + W + ")(?:\\s+und\\s+" + W + ")?\\s+(" + W + ")");
+  const lines = t2.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (NOT_PERSON.test(line)) continue;
+    const next = lines.slice(i + 1).find((l) => l.trim()) || "";
+    if (NOT_PERSON.test(next) && next.trim().length < 40) continue;   // z. B. "- Vermieter -" unter der Zeile
+    const a = re.exec(line);
+    if (a && okWord(a[1]) && okWord(a[2])) return { nachname: titleCase(a[2]), vorname: titleCase(a[1]), src: "Anschrift", sure: false };
+  }
+  return { nachname: "", vorname: "", src: "nicht gefunden", sure: false };
+}
+
+/* ---------- Datum ---------- */
+function findDate(text) {
+  const re = /\b(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4}|\d{2})\b/g; let m;
+  while ((m = re.exec(text))) {
+    let [, d, mo, y] = m; d = +d; mo = +mo; y = +y; if (y < 100) y += y > 50 ? 1900 : 2000;
+    if (d >= 1 && d <= 31 && mo >= 1 && mo <= 12 && y >= 1990 && y <= 2100) return `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  }
+  return "";
+}
+
+/* ---------- Dateiname ---------- */
+function clean(v) { return String(v || "").trim().replace(/[<>:"/\\|?*\x00-\x1F]/g, "").replace(/\s+/g, "-"); }
+function buildName(item) {
+  const ext = "." + item.name.split(".").pop().toLowerCase();
+  const orig = item.name.replace(/\.[^.]+$/, "");
+  let s = setting("muster")
+    .replace(/\{Nachname\}/gi, clean(item.nachname) || "Unbekannt")
+    .replace(/\{Vorname\}/gi, clean(item.vorname))
+    .replace(/\{Dokumenttyp\}/gi, clean(item.type) || UNKNOWN)
+    .replace(/\{Datum\}/gi, item.datum || "")
+    .replace(/\{Original\}/gi, clean(orig));
+  s = s.replace(/[<>:"/\\|?*\x00-\x1F]/g, "").replace(/_{2,}/g, "_").replace(/-{2,}/g, "-").replace(/^[_\-. ]+|[_\-. ]+$/g, "");
+  if (!s) s = clean(orig) || "Dokument";
+  return s.slice(0, 150) + ext;
+}
+
+/* ---------- Ordner / Dateien laden ---------- */
+const EXT = /\.(pdf|jpe?g|png)$/i;
+async function pickFolder() {
+  if (state.busy) return;
+  if (!FS) { $("#filepick").click(); return; }
+  let dir;
+  try { dir = await window.showDirectoryPicker({ id: "unterlagen", mode: "readwrite" }); }
+  catch (e) {
+    if (e && e.name === "AbortError") return;
+    setStatus("Der Ordner konnte nicht geöffnet werden. Sie können stattdessen einzelne Dateien auswählen.", undefined, true);
+    $("#filepick").click(); return;
+  }
+  const items = [];
+  for await (const [name, h] of dir.entries()) if (h.kind === "file" && EXT.test(name) && !name.startsWith("~$")) items.push({ name, handle: h });
+  state.dir = dir;
+  $("#folder").innerHTML = ""; const f = document.createElement("span"); f.innerHTML = "Ordner: <strong></strong>"; f.querySelector("strong").textContent = dir.name; $("#folder").appendChild(f);
+  start(items);
+}
+function pickFiles(files) {
+  const items = [...files].filter((f) => EXT.test(f.name)).map((f) => ({ name: f.name, file: f }));
+  state.dir = null;
+  $("#folder").textContent = items.length + " Dateien ausgewählt";
+  start(items);
+}
+async function start(items) {
+  items.sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }));
+  items.forEach((it, i) => Object.assign(it, { id: i, status: "wait", selected: true, type: "", nachname: "", vorname: "", datum: "", manual: {} }));
+  state.items = items;
+  render();
+  if (!items.length) { setStatus("In diesem Ordner liegen keine PDF-, JPG- oder PNG-Dateien.", undefined, true); return; }
+  state.busy = true; updateActions();
+  let done = 0;
+  const queue = items.slice();
+  const workers = Math.max(1, Math.min(3, Math.floor((navigator.hardwareConcurrency || 2) / 2)));
+  setStatus(`Lese ${items.length} Dateien … Beim ersten Mal wird die Texterkennung vorbereitet.`, 0);
+  const t0 = performance.now();
+  async function runner() {
+    while (queue.length) {
+      const it = queue.shift();
+      it.status = "work"; renderRow(it);
+      try {
+        it.text = await readText(it);
+        analyse(it);
+      } catch (e) {
+        console.error(e);
+        it.status = "error";
+        const msg = String(e && e.name) + String(e && e.message);
+        it.error = /password/i.test(msg) ? "Datei ist kennwortgeschützt" : "Datei konnte nicht gelesen werden";
+        if (/Texterkennung/.test(msg)) { it.error = "Texterkennung nicht verfügbar"; setStatus(e.message, undefined, true); }
+      }
+      done++; renderRow(it);
+      const left = items.length - done;
+      const per = (performance.now() - t0) / done;
+      setStatus(left ? `${done} von ${items.length} gelesen. Noch etwa ${Math.max(1, Math.round(per * left / workers / 1000))} Sekunden.` : "", done / items.length);
+      updateActions();
+    }
+  }
+  await Promise.all(Array.from({ length: workers }, runner));
+  state.busy = false;
+  const errs = items.filter((i) => i.status === "error").length;
+  setStatus(`Fertig: ${items.length - errs} Dateien gelesen${errs ? `, ${errs} mit Fehler` : ""}. Bitte die gelb markierten Vorschläge prüfen.`);
+  updateActions();
+}
+function analyse(it) {
+  const c = classify(it.text);
+  if (!it.manual.type) { it.type = c.type; it.typeSure = c.sure; it.why = c.why; }
+  const nm = findName(it.text);
+  if (!it.manual.nachname) it.nachname = nm.nachname;
+  if (!it.manual.vorname) it.vorname = nm.vorname;
+  if (!it.manual.nachname && !it.manual.vorname) { it.nameSrc = nm.src; it.nameSure = nm.sure; }
+  it.datum = findDate(it.text);
+  it.status = "done";
+}
+function reanalyseAll() {
+  for (const it of state.items) if (it.status === "done") { analyse(it); renderRow(it); }
+  updateActions();
+}
+
+/* ---------- Darstellung ---------- */
+function rowState(it) {
+  if (it.status === "wait") return ["wait", "Wartet"];
+  if (it.status === "work") return ["wait", "Wird gelesen …"];
+  if (it.status === "error") return ["miss", it.error];
+  if (it.status === "applied") return ["ok", it.appliedText];
+  if (it.status === "failed") return ["miss", it.error];
+  if (!it.nachname) return ["miss", "Name fehlt"];
+  const typeOk = it.manual.type || it.typeSure, nameOk = it.manual.nachname || it.manual.vorname || it.nameSure;
+  if (typeOk && nameOk) return ["ok", "Sicher"];
+  return ["check", "Bitte prüfen"];
+}
+function render() {
+  const has = state.items.length > 0;
+  $("#empty").classList.toggle("hidden", has);
+  $("#tablewrap").classList.toggle("hidden", !has);
+  $("#actions").classList.toggle("hidden", !has);
+  const tb = $("#rows"); tb.innerHTML = "";
+  for (const it of state.items) { it.tr = document.createElement("tr"); tb.appendChild(it.tr); renderRow(it); }
+  updateActions();
+}
+function renderRow(it) {
+  const tr = it.tr; if (!tr) return;
+  tr.innerHTML = "";
+  tr.classList.toggle("skip", !it.selected);
+  const td = (cls) => { const d = document.createElement("td"); if (cls) d.className = cls; tr.appendChild(d); return d; };
+  const ready = it.status === "done";
+
+  const c1 = td("sel"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = it.selected; cb.setAttribute("aria-label", "Datei " + it.name + " einbeziehen");
+  cb.onchange = () => { it.selected = cb.checked; tr.classList.toggle("skip", !it.selected); updateActions(); }; c1.appendChild(cb);
+
+  const c2 = td("thumb"); const tb = document.createElement("button"); tb.className = "thumbbox"; tb.title = "Datei öffnen"; tb.setAttribute("aria-label", "Datei " + it.name + " öffnen");
+  if (it.thumb) { const im = document.createElement("img"); im.src = it.thumb; im.alt = ""; tb.appendChild(im); }
+  tb.onclick = async () => { const f = it.file || await it.handle.getFile(); window.open(URL.createObjectURL(f), "_blank"); };
+  c2.appendChild(tb);
+
+  const c3 = td("orig"); c3.textContent = it.originalName || it.name;
+  if (it.pages) { const sm = document.createElement("small"); sm.textContent = (it.pages === 1 ? "1 Seite" : it.pages + " Seiten") + (it.ocr ? ", Texterkennung" : ""); c3.appendChild(sm); }
+
+  const c4 = td();
+  if (ready || it.status === "applied") {
+    const tab = document.createElement("span"); tab.className = "tab"; tab.style.setProperty("--h", hue(it.type));
+    const sel = document.createElement("select"); sel.setAttribute("aria-label", "Dokumenttyp");
+    for (const t of [...TYPES, UNKNOWN]) { const o = document.createElement("option"); o.textContent = t; if (t === it.type) o.selected = true; sel.appendChild(o); }
+    sel.disabled = it.status === "applied";
+    sel.onchange = () => { it.type = sel.value; it.manual.type = true; renderRow(it); updateActions(); };
+    tab.appendChild(sel); c4.appendChild(tab);
+    const w = document.createElement("div"); w.className = "why"; w.textContent = it.manual.type ? "Von Hand gewählt" : it.why; c4.appendChild(w);
+  }
+
+  for (const f of ["nachname", "vorname"]) {
+    const c = td();
+    if (ready || it.status === "applied") {
+      const inp = document.createElement("input"); inp.type = "text"; inp.className = "name" + (f === "nachname" && !it.nachname ? " missing" : "");
+      inp.value = it[f]; inp.setAttribute("aria-label", f === "nachname" ? "Nachname" : "Vorname"); inp.disabled = it.status === "applied";
+      inp.oninput = () => { it[f] = inp.value; it.manual[f] = true; inp.classList.toggle("missing", f === "nachname" && !inp.value.trim()); updatePreview(it); updateActions(); };
+      c.appendChild(inp);
+      if (f === "nachname") { const s = document.createElement("div"); s.className = "src"; s.textContent = (it.manual.nachname || it.manual.vorname) ? "Von Hand eingetragen" : "Quelle: " + it.nameSrc; c.appendChild(s); }
+    }
+  }
+
+  const c7 = td(); it.previewEl = document.createElement("div"); c7.appendChild(it.previewEl); updatePreview(it);
+  if (ready && it.text) {
+    const d = document.createElement("details"); const s = document.createElement("summary"); s.textContent = "Erkannten Text anzeigen";
+    const pre = document.createElement("pre"); pre.textContent = it.text.trim().slice(0, 1500) || "(kein Text erkannt)";
+    d.append(s, pre); c7.appendChild(d);
+  }
+
+  const c8 = td(); const [cls, label] = rowState(it); const st = document.createElement("span"); st.className = "state " + cls; st.textContent = label; c8.appendChild(st);
+  it.stateEl = st;
+}
+function updatePreview(it) {
+  if (!it.previewEl) return;
+  if (it.status === "applied") { it.previewEl.className = "newname"; it.previewEl.textContent = it.name; return; }
+  if (it.status !== "done") { it.previewEl.className = "newname dim"; it.previewEl.textContent = "–"; return; }
+  it.previewEl.className = "newname"; it.previewEl.textContent = buildName(it);
+  if (it.stateEl) { const [cls, label] = rowState(it); it.stateEl.className = "state " + cls; it.stateEl.textContent = label; }
+}
+function updateActions() {
+  const sel = state.items.filter((i) => i.selected && i.status === "done");
+  const check = sel.filter((i) => rowState(i)[0] !== "ok").length;
+  const applied = state.items.filter((i) => i.status === "applied").length;
+  let t = `<b>${sel.length}</b> ${sel.length === 1 ? "Datei" : "Dateien"} bereit`;
+  if (check) t += `, davon <b>${check}</b> zu prüfen`;
+  if (applied) t += `. <b>${applied}</b> bereits erledigt`;
+  $("#summary").innerHTML = t + ".";
+  const mode = setting("ablage");
+  $("#apply").textContent = !state.dir ? "Als ZIP-Datei speichern" : mode === "kopie" ? "Umbenannte Kopien speichern" : "Dateien umbenennen";
+  $("#apply").disabled = state.busy || sel.length === 0;
+}
+
+/* ---------- Umbenennen ---------- */
+function uniqueName(name, taken) {
+  if (!taken.has(name.toLowerCase())) { taken.add(name.toLowerCase()); return name; }
+  const dot = name.lastIndexOf("."), base = name.slice(0, dot), ext = name.slice(dot);
+  for (let i = 2; ; i++) { const n = `${base}_${i}${ext}`; if (!taken.has(n.toLowerCase())) { taken.add(n.toLowerCase()); return n; } }
+}
+function csvLine(cols) { return cols.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";"); }
+function stamp() { const d = new Date(), p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}`; }
+
+async function apply() {
+  const sel = state.items.filter((i) => i.selected && i.status === "done");
+  if (!sel.length) return;
+  const missing = sel.filter((i) => !i.nachname.trim()).length;
+  if (missing && !confirm(`Bei ${missing} ${missing === 1 ? "Datei" : "Dateien"} fehlt der Nachname. Diese erhalten „Unbekannt“ im Namen. Trotzdem fortfahren?`)) return;
+  state.busy = true; updateActions();
+  const log = [csvLine(["Zeitpunkt", "Originalname", "Neuer Name", "Dokumenttyp", "Nachname", "Vorname", "Typ erkannt", "Name-Quelle"])];
+  const now = new Date().toLocaleString("de-DE");
+  try {
+    if (!state.dir) await applyZip(sel, log, now);
+    else await applyFolder(sel, log, now);
+  } catch (e) {
+    console.error(e); setStatus("Fehler beim Speichern: " + (e && e.message || e), undefined, true);
+  }
+  state.busy = false; updateActions();
+}
+async function applyFolder(sel, log, now) {
+  const mode = setting("ablage");
+  if (typeof state.dir.queryPermission === "function" &&
+      (await state.dir.queryPermission({ mode: "readwrite" })) !== "granted" &&
+      (await state.dir.requestPermission({ mode: "readwrite" })) !== "granted") {
+    setStatus("Ohne Schreibrecht für den Ordner kann nichts gespeichert werden.", undefined, true); return;
+  }
+  const target = mode === "kopie" ? await state.dir.getDirectoryHandle("umbenannt", { create: true }) : state.dir;
+  const taken = new Set();
+  for await (const [name] of target.entries()) taken.add(name.toLowerCase());
+  if (mode === "umbenennen") for (const it of sel) taken.delete(it.name.toLowerCase());
+  let ok = 0, fail = 0;
+  for (const [i, it] of sel.entries()) {
+    setStatus(`Speichere ${i + 1} von ${sel.length} …`, i / sel.length);
+    const wanted = buildName(it);
+    const newName = uniqueName(wanted, taken);
+    const oldName = it.name;
+    try {
+      if (mode === "kopie") {
+        const fh = await target.getFileHandle(newName, { create: true });
+        const w = await fh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
+        it.appliedText = "Kopie gespeichert";
+      } else if (newName !== oldName) {
+        let moved = false;
+        if (typeof it.handle.move === "function") { try { await it.handle.move(newName); moved = true; } catch {} }
+        if (!moved) {
+          const fh = await target.getFileHandle(newName, { create: true });
+          const w = await fh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
+          await target.removeEntry(oldName);
+          it.handle = fh;
+        }
+        it.appliedText = "Umbenannt";
+      } else it.appliedText = "Name unverändert";
+      it.originalName = oldName; it.name = newName; it.status = "applied"; ok++;
+      log.push(csvLine([now, oldName, newName, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc]));
+    } catch (e) {
+      console.error(e); it.status = "failed"; it.error = "Speichern fehlgeschlagen"; fail++;
+    }
+    renderRow(it);
+  }
+  const lf = await target.getFileHandle(`Protokoll_${stamp()}.csv`, { create: true });
+  const lw = await lf.createWritable(); await lw.write("\ufeff" + log.join("\r\n") + "\r\n"); await lw.close();
+  setStatus(`${ok} ${ok === 1 ? "Datei" : "Dateien"} ${mode === "kopie" ? "im Unterordner „umbenannt“ gespeichert" : "umbenannt"}${fail ? `, ${fail} fehlgeschlagen` : ""}. Ein Protokoll liegt im selben Ordner.`, undefined, fail > 0);
+}
+
+/* ZIP ohne Kompression, wenn kein Ordnerzugriff möglich ist */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files) {
+  const enc = new TextEncoder(), parts = [], central = []; let offset = 0;
+  const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)), dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate());
+  for (const f of files) {
+    const name = enc.encode(f.name), data = f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
+    h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, dt, true); c.setUint16(14, dd, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+    c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+    central.push(new Uint8Array(c.buffer), name);
+    offset += 30 + name.length + data.length;
+  }
+  const size = central.reduce((s, p) => s + p.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: "application/zip" });
+}
+async function applyZip(sel, log, now) {
+  const taken = new Set(), files = [];
+  for (const it of sel) {
+    const newName = uniqueName(buildName(it), taken);
+    files.push({ name: newName, data: new Uint8Array(await it.file.arrayBuffer()) });
+    log.push(csvLine([now, it.name, newName, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc]));
+    it.originalName = it.name; it.name = newName; it.status = "applied"; it.appliedText = "In ZIP-Datei"; renderRow(it);
+  }
+  files.push({ name: `Protokoll_${stamp()}.csv`, data: new TextEncoder().encode("\ufeff" + log.join("\r\n") + "\r\n") });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(makeZip(files)); a.download = `Unterlagen_umbenannt_${stamp()}.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setStatus(`${sel.length} Dateien in die ZIP-Datei gepackt. Sie liegt in Ihrem Download-Ordner.`);
+}
+
+/* ---------- Personenliste ---------- */
+function parsePersons(txt) {
+  const lines = txt.replace(/^\ufeff/, "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return [];
+  const sep = [";", "\t", ","].find((s) => lines[0].includes(s)) || ";";
+  let rows = lines.map((l) => l.split(sep).map((c) => c.replace(/^"|"$/g, "").trim()));
+  let iN = 0, iV = 1;
+  const head = rows[0].map((c) => c.toLowerCase());
+  if (head.some((c) => /name/.test(c))) {
+    const a = head.findIndex((c) => /nach|familien/.test(c) || c === "name"), b = head.findIndex((c) => /vor/.test(c));
+    if (a >= 0) iN = a; if (b >= 0) iV = b; rows = rows.slice(1);
+  }
+  return rows.filter((r) => r[iN]).map((r) => ({ nachname: r[iN], vorname: r[iV] || "" }));
+}
+
+/* ---------- Start ---------- */
+function applyBrand() {
+  const M = window.MARKE; if (!M) return;
+  const f = M.farben || {}, st = document.documentElement.style;
+  const map = { primaer: "--brand", text: "--brand-ink", grau: "--brand-muted", linie: "--brand-line" };
+  for (const k in map) if (/^#[0-9a-f]{3,8}$/i.test(f[k] || "")) st.setProperty(map[k], f[k]);
+  if (M.produkt) { $("#produkt").textContent = M.produkt; }
+  $("#firma").textContent = M.firma ? "von " + M.firma : "";
+  document.title = [M.produkt, M.firma].filter(Boolean).join(" – ");
+  if (M.logoSvg && /^\s*<svg[\s>]/i.test(M.logoSvg)) {
+    const doc = new DOMParser().parseFromString(M.logoSvg, "image/svg+xml");
+    const svg = doc.documentElement;
+    if (svg.nodeName.toLowerCase() === "svg") { svg.querySelectorAll("script,foreignObject").forEach((n) => n.remove()); svg.setAttribute("aria-hidden", "true"); $("#logo").appendChild(document.importNode(svg, true)); }
+  }
+  if (M.fusszeile) { $("#brandnote").textContent = M.fusszeile; $("#brandnote").classList.remove("hidden"); }
+}
+function init() {
+  applyBrand();
+  if (!R) { setStatus("Die Datei regeln.js fehlt oder enthält einen Fehler. Bitte den Programmordner vollständig entpacken.", undefined, true); $("#pick").disabled = true; return; }
+  if (!window.pdfjsLib || !window.Tesseract || !window.TESS_WORKER_B64 || !window.TESS_DEU_B64) {
+    setStatus("Programmdateien fehlen. Bitte den Ordner „app“ vollständig entpacken.", undefined, true); $("#pick").disabled = true; return;
+  }
+  if (!FS) {
+    $("#pick").textContent = "Dateien wählen";
+    const r = document.querySelector("input[value=umbenennen]"); r.disabled = true; r.parentElement.style.opacity = .5;
+    const k = document.querySelector("input[value=kopie]"); k.parentElement.lastChild.textContent = " Umbenannte Dateien als ZIP-Datei herunterladen";
+    setStatus("Hinweis: Dieser Browser kann Ordner nicht direkt bearbeiten. Mit Microsoft Edge oder Google Chrome lassen sich Dateien direkt im Ordner umbenennen.");
+  }
+  $("#muster").value = store.get("muster", R.dateiname || "{Nachname}_{Vorname}_{Dokumenttyp}");
+  const ab = store.get("ablage", "kopie"); (document.querySelector(`input[name=ablage][value=${ab}]`) || document.querySelector("input[value=kopie]")).checked = true;
+  if (!FS) document.querySelector("input[value=kopie]").checked = true;
+  $("#seiten").value = store.get("seiten", String(R.seitenProDokument || 2));
+  if (![...$("#seiten").options].some((o) => o.selected)) $("#seiten").value = "2";
+
+  for (const p of PLACEHOLDERS) {
+    const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = p; b.title = p + " einfügen";
+    b.onclick = () => { const i = $("#muster"); const pos = i.selectionStart ?? i.value.length; i.value = i.value.slice(0, pos) + p + i.value.slice(i.selectionEnd ?? pos); i.focus(); i.dispatchEvent(new Event("input")); };
+    $("#chips").appendChild(b);
+  }
+  $("#pick").onclick = pickFolder;
+  $("#filepick").onchange = (e) => { if (e.target.files.length) pickFiles(e.target.files); e.target.value = ""; };
+  $("#muster").oninput = () => { store.set("muster", $("#muster").value); state.items.forEach(updatePreview); };
+  document.querySelectorAll("input[name=ablage]").forEach((r) => r.onchange = () => { store.set("ablage", setting("ablage")); updateActions(); });
+  $("#seiten").onchange = () => store.set("seiten", $("#seiten").value);
+  let deb; const re = () => { clearTimeout(deb); deb = setTimeout(reanalyseAll, 250); };
+  $("#vNach").oninput = re; $("#vVor").oninput = re;
+  $("#plist").onclick = () => $("#plistfile").click();
+  $("#plistfile").onchange = async (e) => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    const buf = await f.arrayBuffer();
+    let txt = new TextDecoder("utf-8").decode(buf);
+    if (txt.includes("\ufffd")) txt = new TextDecoder("windows-1252").decode(buf);
+    state.persons = parsePersons(txt);
+    $("#plistinfo").textContent = state.persons.length ? `${state.persons.length} Personen geladen` : "Keine Namen in der Datei gefunden";
+    reanalyseAll();
+  };
+  $("#all").onchange = (e) => { state.items.forEach((i) => { i.selected = e.target.checked; renderRow(i); }); updateActions(); };
+  $("#apply").onclick = apply;
+}
+init();
+</script>
+</body>
+</html>

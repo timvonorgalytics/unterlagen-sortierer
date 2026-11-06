@@ -1,0 +1,44 @@
+UNTERLAGEN-SORTIERER - HINWEISE FÜR DIE IT
+==========================================
+
+TECHNIK
+  - Reine HTML/JavaScript-Anwendung, wird lokal (file://) in Edge oder
+    Chrome geöffnet. Keine Installation, keine Administratorrechte,
+    kein Server, keine Registry-Einträge.
+  - Texterkennung: Tesseract (tesseract.js 5.1.1, WebAssembly) mit
+    deutschem Sprachmodell. PDF-Darstellung: pdf.js 3.11.174.
+    Alle Bibliotheken liegen im Ordner app\lib, es wird nichts aus dem
+    Internet geladen.
+  - Ordnerzugriff über die File System Access API des Browsers
+    (Edge/Chrome ab Version 86). Der Zugriff gilt nur für den Ordner,
+    den die Benutzerin bzw. der Benutzer selbst auswählt.
+  - Gespeichert wird im Browser nur: Dateinamen-Muster, Ablageart,
+    Seitenanzahl. Keine Dokumentinhalte, keine Namen.
+
+DATENSCHUTZ
+  - Es findet keine Datenübertragung statt. Die Anwendung enthält keine
+    Netzwerkaufrufe außer dem Laden der eigenen Dateien vom Datenträger.
+  - Die Verarbeitung ist trotzdem eine Verarbeitung personenbezogener
+    Daten (Sozialdaten). Bitte in das Verzeichnis der
+    Verarbeitungstätigkeiten aufnehmen.
+  - Die Klassifizierung ist ein Vorschlag; die Entscheidung trifft die
+    Sachbearbeitung vor dem Umbenennen. Jeder Vorgang wird in einer
+    CSV-Datei protokolliert.
+
+GRUPPENRICHTLINIEN (Edge)
+  Wird der Ordnerzugriff per Richtlinie blockiert
+  (DefaultFileSystemReadGuardSetting / DefaultFileSystemWriteGuardSetting
+  = 2), schaltet das Programm auf Dateiauswahl + ZIP-Download um.
+  Für den direkten Ordnerzugriff file:///* in
+  FileSystemReadAskForUrls und FileSystemWriteAskForUrls erlauben.
+
+ANPASSEN
+  Dokumenttypen und Suchbegriffe stehen in regeln.js (Texteditor).
+  Aufbau ist in der Datei beschrieben. Nach dem Speichern im Browser F5.
+  Name, Farben, Logo (SVG) und Fußzeile stehen in marke.js.
+
+LIZENZEN
+  tesseract.js, tesseract.js-core, pdf.js: Apache License 2.0
+  Deutsches Sprachmodell (tessdata): Apache License 2.0
+  Schriften Geist und Lora: SIL Open Font License 1.1 (eingebettet)
+  Lizenztexte: app\lib\lizenzen

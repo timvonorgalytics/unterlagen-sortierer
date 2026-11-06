@@ -1,0 +1,73 @@
+UNTERLAGEN-SORTIERER
+====================
+
+Das Programm liest eingescannte Unterlagen (PDF, JPG, PNG), erkennt den
+Dokumenttyp und den Namen und benennt die Dateien einheitlich um, z. B.:
+
+    Scan_0001.pdf   ->   Mustermann_Erika_Antrag.pdf
+    Scan_0002.pdf   ->   Mustermann_Erika_Kontoauszug.pdf
+
+Alles läuft auf diesem Rechner. Es werden keine Daten übertragen,
+eine Internetverbindung ist nicht nötig.
+
+
+STARTEN
+  Doppelklick auf "Unterlagen-Sortierer starten".
+  Das Programm öffnet sich in Microsoft Edge.
+
+
+SO GEHT'S
+  1. "Ordner wählen" klicken und den Ordner mit den Scans auswählen.
+     Beim ersten Mal fragt Edge, ob das Programm den Ordner bearbeiten
+     darf: "Dateien bearbeiten" bzw. "Zulassen" wählen.
+
+  2. Optional: Nachname und Vorname des Antragstellers eintragen.
+     Dann erhalten alle Dateien diesen Namen. Sonst liest das Programm
+     den Namen aus jedem Dokument.
+
+  3. Das Programm liest alle Dateien (einige Sekunden pro Seite).
+
+  4. Liste prüfen:
+       Grün  "Sicher"        -> Vorschlag ist eindeutig
+       Gelb  "Bitte prüfen"  -> kurz kontrollieren
+       Rot   "Name fehlt"    -> Name von Hand eintragen
+     Dokumenttyp und Name lassen sich in jeder Zeile ändern.
+     Ein Klick auf das kleine Vorschaubild öffnet die Datei.
+     Zeilen ohne Haken werden nicht umbenannt.
+
+  5. Unten rechts auf den Knopf klicken:
+       "Umbenannte Kopien speichern" -> Kopien im Unterordner "umbenannt",
+                                         die Originale bleiben erhalten
+       "Dateien umbenennen"          -> die Originale werden umbenannt
+     Die Auswahl treffen Sie oben rechts unter "Neuer Dateiname".
+
+  Jeder Durchgang legt ein Protokoll (Protokoll_Datum.csv) in den Ordner.
+  Es lässt sich mit Excel öffnen und zeigt alte und neue Dateinamen.
+
+
+PERSONENLISTE (optional)
+  Eine CSV-Datei mit den Spalten Nachname;Vorname, z. B. aus Excel
+  ("Speichern unter" -> "CSV (Trennzeichen-getrennt)").
+  Das Programm ordnet dann jedes Dokument der passenden Person zu,
+  z. B. bei Ehepaaren. Die Liste wird nicht gespeichert.
+
+
+DATEINAME ANPASSEN
+  Im Feld "Neuer Dateiname" können Sie die Bausteine frei kombinieren:
+  {Nachname} {Vorname} {Dokumenttyp} {Datum} {Original}
+  Die Einstellung bleibt für das nächste Mal erhalten.
+
+
+AUSPROBIEREN
+  Im Ordner "Beispiel-Scans" liegen fiktive Testunterlagen.
+
+
+WENN ETWAS NICHT KLAPPT
+  - Das Programm öffnet sich nicht in Edge:
+    Rechtsklick auf app\index.html -> "Öffnen mit" -> Microsoft Edge
+  - "Dateien wählen" statt "Ordner wählen" wird angezeigt:
+    Der Browser erlaubt keinen Ordnerzugriff. Die umbenannten Dateien
+    werden dann als ZIP-Datei in den Download-Ordner gespeichert.
+  - Schlecht erkannte Dokumente: Scans mit 300 dpi und gerade
+    eingelegtem Papier liefern die besten Ergebnisse. Handschrift
+    wird nur eingeschränkt erkannt.
