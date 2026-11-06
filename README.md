@@ -1,5 +1,9 @@
 # Unterlagen-Sortierer
 
+[![Tests](https://github.com/timvonorgalytics/unterlagen-sortierer/actions/workflows/tests.yml/badge.svg)](https://github.com/timvonorgalytics/unterlagen-sortierer/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/timvonorgalytics/unterlagen-sortierer?label=Release)](https://github.com/timvonorgalytics/unterlagen-sortierer/releases/latest)
+[![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
+
 Ein Offline-Werkzeug für Service Points in Verwaltungen (Sozialamt, Grundsicherung):
 Es liest eingescannte Antragsunterlagen (PDF/JPG/PNG), erkennt **Dokumenttyp** und
 **Person** und benennt die Dateien einheitlich um — z. B.
