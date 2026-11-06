@@ -102,6 +102,19 @@ window.REGELN = {
       stark: ["Unterhaltszahlung", "Unterhaltstitel", "Unterhaltsvorschuss", "Unterhaltsvereinbarung"],
       schwach: ["Unterhalt", "Unterhaltspflicht"] },
 
+    { name: "Arztbescheinigung",
+      stark: ["Ärztliche Bescheinigung", "Ärztliches Attest", "Ärztliche Stellungnahme", "Arztbrief", "Befundbericht",
+              "zur Vorlage beim Träger der Sozialhilfe"],
+      schwach: ["Diagnose", "Patient", "Patientin", "Praxis", "Facharzt", "Fachärztin", "ICD", "Krankenkost"] },
+
+    { name: "Kuendigung",
+      stark: ["Kündigung", "Kündigungsbestätigung", "kündige ich", "Kündigungsschreiben", "fristlose Kündigung"],
+      schwach: ["Kündigungsfrist", "Vertragsende", "zum nächstmöglichen Zeitpunkt", "fristgerecht"] },
+
+    { name: "Mahnung",
+      stark: ["Mahnung", "Zahlungserinnerung", "Mahnbescheid", "letzte Mahnung"],
+      schwach: ["offener Betrag", "Mahngebühr", "Zahlungsfrist", "Verzug", "offene Forderung"] },
+
     { name: "Vollmacht",
       stark: ["Vollmacht", "Betreuerausweis", "Bestellung zum Betreuer", "Betreuungsgericht", "Vorsorgevollmacht"],
       schwach: ["Bevollmächtigte", "Betreuer", "Betreuerin", "Amtsgericht"] },

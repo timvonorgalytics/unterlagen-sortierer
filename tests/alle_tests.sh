@@ -3,7 +3,7 @@
 #   python3 -m pip install playwright && python3 -m playwright install chromium
 cd "$(dirname "$0")" || exit 1
 fail=0
-for t in test_namen.py test_dateimodus.py test_teilen.py test_ordnermodus.py test_offline.py test_ci.py; do
+for t in test_namen.py test_regeln.py test_dateimodus.py test_teilen.py test_ordnermodus.py test_mehrkunden.py test_offline.py test_ci.py; do
   python3 "$t" || fail=1
 done
 echo

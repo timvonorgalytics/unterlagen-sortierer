@@ -68,8 +68,21 @@ oder `applyZip()` (Ersatz ohne Ordnerzugriff, eigener ZIP-Schreiber ohne Kompres
   eingebettet (`embedJpg`/`embedPng`). Originale bleiben, werden abgewählt. „Verwerfen“ entfernt eine
   erzeugte Zeile wieder. Erzeugte Dateien (`item.data`) werden beim Speichern immer neu geschrieben
   (auch im Modus „umbenennen“), Protokoll-Spalte „Hinweis“ nennt die Herkunft (Seiten/Quelldateien).
-- **Speichern:** nie überschreiben (`uniqueName` hängt `_2` an), Fremddateien im Ordner unberührt lassen,
-  immer `Protokoll_<Zeit>.csv` (UTF-8 mit BOM, Semikolon → Excel-tauglich).
+- **Speichern:** nie überschreiben (`uniqueName` hängt `_2` an, je Zielordner eigene Namensliste),
+  Fremddateien im Ordner unberührt lassen, immer `Protokoll_<Zeit>.csv` im Haupt-Zielordner (UTF-8 mit
+  BOM, Semikolon → Excel-tauglich; Spalte „Neuer Name“ enthält ggf. den Unterordner-Pfad).
+  Haken „Je Person einen Unterordner anlegen“ (`#perperson`): Dateien landen in `Nachname_Vorname/`
+  (auch als Pfade in der ZIP) – für das Ziehen pro Person in die eAkte. Die eAkte nimmt einzelne
+  Dateien per Drag & Drop an; die ZIP ist NUR der Notweg ohne Ordnerzugriff.
+- **Mehrkunden/Dauerbetrieb:** Ohne Vorgabe wird der Name je Dokument erkannt → mehrere Personen in
+  einem Durchlauf. „Neue Dateien einlesen“ (`rescanFolder()`): entfernt erledigte (applied) Zeilen,
+  liest nur Dateien nach, die weder in der Liste noch in `state.done` stehen (dort landen alte UND
+  neue Namen beim Speichern – wichtig im Kopien-Modus, wo Originale liegen bleiben). `start(items,
+  append)` hängt neue Dateien an, statt die Liste zu ersetzen.
+- **Bedienung:** Drag & Drop von Dateien oder einem Ordner aufs Fenster (`initDrop()`; ein Ordner kommt
+  per `getAsFileSystemHandle` in den echten Ordnermodus). Filter „Nur zu prüfende anzeigen“
+  (`applyRowFilter`, bewusst nur beim Neuzeichnen, damit Zeilen nicht beim Tippen verschwinden).
+  „Erkennungsregeln“ (Kopfzeile) öffnet die Read-only-Ansicht aller Typen/Begriffe (`openRules()`).
 - **localStorage** nur für Programmeinstellungen (Muster, Ablage, Seiten). Nie Namen oder Inhalte speichern.
 
 ## Fallstricke (alle schon einmal gelöst – nicht wieder einbauen)
@@ -106,7 +119,10 @@ python3 tests/test_dateimodus.py                       # einzelner Test
 | Test | Prüft |
 | --- | --- |
 | test_dateimodus.py | Typ + Name aller Testunterlagen ohne Vorgabe, mit Vorgabe, mit Personenliste; manuelle Korrektur; ZIP-Export |
-| test_teilen.py | Stapel-Scan: Mehrtyp-Hinweis, Trennvorschlag, Trennstelle von Hand, Teilen (Typ/Name/Seitenzahl der Teile), ZIP + Protokoll-Hinweis; Zusammenführen PDF+JPG, Verwerfen |
+| test_namen.py | findName direkt auf Textproben (zwei Vornamen, Formular-Tabellen, beschriftete Felder, Absender, Anrede) |
+| test_regeln.py | classify auf Textproben (neue Praxis-Typen + Regressionen), Drag & Drop, Filter, Regeln-Dialog |
+| test_teilen.py | Stapel-Scan: Mehrtyp-Hinweis, Trennvorschlag, leere Seite erkannt/weggelassen, Trennstelle von Hand, Teilen, ZIP + Protokoll-Hinweis; Zusammenführen PDF+JPG, Verwerfen |
+| test_mehrkunden.py | Unterordner je Person (Ordner- und ZIP-Modus), „Neue Dateien einlesen“ (erledigte raus, nur Neue dazu, nichts doppelt) |
 | test_ordnermodus.py | Kopien in „umbenannt“, Originale umbenennen, Ersatzweg ohne move(), keine Überschreibung, Fremddateien |
 | test_offline.py | läuft ohne Netz, null Netzanfragen |
 | test_ci.py | Farben/Name aus marke.js, Schriften offline, Logo-Einbau sicher; Screenshots in tests/screenshots |

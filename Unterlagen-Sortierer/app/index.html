@@ -193,6 +193,11 @@ details pre {
 .actions .summary b { font-weight: 650; }
 .hidden { display: none !important; }
 
+/* Ziehen und Ablegen */
+body.drag .empty { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+body.drag .tablewrap { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.onlycheck { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+
 /* Kleine Knöpfe in der Tabelle (Teilen, Verwerfen) */
 .btn.mini { font-size: 12.5px; padding: 3px 9px; margin-top: 6px; border-radius: 6px; }
 .why.warn { color: var(--check); font-weight: 600; }
@@ -209,12 +214,19 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 .dlghead .file { color: var(--muted); font-size: 13.5px; word-break: break-all; }
 .dlgbody { padding: 14px 22px; overflow: auto; max-height: calc(90vh - 170px); }
 .dlgbody .hint { margin: 0 0 12px; }
-.pages { display: flex; flex-wrap: wrap; align-items: flex-start; row-gap: 14px; }
-.page { width: 118px; text-align: center; }
-.page img { width: 104px; max-height: 150px; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 4px; }
+.pages { display: flex; flex-wrap: wrap; align-items: flex-start; row-gap: 16px; }
+.page { width: 168px; text-align: center; position: relative; }
+.page img { width: 152px; max-height: 214px; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 4px; cursor: zoom-in; }
 .page .pno { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
+.page .skippage {
+  position: absolute; top: 4px; right: 10px; font-size: 11.5px; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--sheet); color: var(--muted); cursor: pointer; padding: 1px 6px;
+}
+.page .skippage:hover { border-color: var(--accent); color: var(--ink); }
+.page.drop img { opacity: .3; }
+.page.drop .ptype { opacity: .5; }
 .ptype {
-  display: inline-block; font-size: 11.5px; font-weight: 600; border-radius: 4px; padding: 1px 6px; margin-top: 3px; max-width: 112px;
+  display: inline-block; font-size: 11.5px; font-weight: 600; border-radius: 4px; padding: 1px 6px; margin-top: 3px; max-width: 150px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   background: hsl(var(--h) 45% 94%); color: hsl(var(--h) 45% 24%);
 }
@@ -223,7 +235,27 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   .ptype { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); }
   .ptype.vage { background: var(--paper); color: var(--muted); }
 }
-.cut { position: relative; width: 30px; min-height: 160px; align-self: stretch; border: 0; background: transparent; cursor: pointer; padding: 0; }
+/* Regeln-Ansicht */
+.rule { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.rule:last-child { border-bottom: 0; }
+.rule .tabname {
+  display: inline-block; font-weight: 600; font-size: 14px; border-left: 4px solid hsl(var(--h) 45% 46%);
+  background: hsl(var(--h) 45% 94%); color: hsl(var(--h) 45% 24%); border-radius: 0 6px 6px 0; padding: 3px 10px 3px 8px; margin-bottom: 7px;
+}
+@media (prefers-color-scheme: dark) {
+  .rule .tabname { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); border-left-color: hsl(var(--h) 45% 60%); }
+}
+.rule .kws { display: flex; flex-wrap: wrap; gap: 5px; }
+.kw { font-size: 12.5px; border-radius: 4px; padding: 2px 8px; }
+.kw.stark { background: var(--accent-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); font-weight: 600; }
+.kw.schwach { background: var(--paper); color: var(--muted); border: 1px dashed var(--line); }
+
+.zoom {
+  position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .72);
+  display: grid; place-items: center; cursor: zoom-out;
+}
+.zoom img { max-width: 92vw; max-height: 92vh; background: #fff; border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+.cut { position: relative; width: 32px; min-height: 220px; align-self: stretch; border: 0; background: transparent; cursor: pointer; padding: 0; }
 .cut::before { content: ""; position: absolute; left: 50%; top: 4px; bottom: 4px; width: 0; border-left: 2px dashed var(--line); }
 .cut:hover::before { border-color: var(--accent); }
 .cut.on::before { border-left: 3px solid var(--accent); }
@@ -252,6 +284,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Zm-1 10L4.3 8.3l1.1-1.1L7 8.8l3.6-3.6 1.1 1.1L7 11Z"/></svg>
     Alles wird auf diesem Rechner verarbeitet. Es werden keine Daten übertragen.
   </span>
+  <button class="btn" id="rules">Erkennungsregeln</button>
 </header>
 
 <section class="setup" aria-label="Einstellungen">
@@ -260,6 +293,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <button class="btn primary big" id="pick">Ordner wählen</button>
     <input type="file" id="filepick" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="hidden">
     <div class="folder" id="folder"></div>
+    <button class="btn" id="rescan" style="margin-top:8px" hidden>Neue Dateien einlesen</button>
   </div>
 
   <div>
@@ -283,6 +317,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <div class="radio" id="ablage" role="radiogroup" aria-label="Ablage">
       <label><input type="radio" name="ablage" value="kopie"> Kopien im Unterordner „umbenannt“ speichern (Originale bleiben)</label>
       <label><input type="radio" name="ablage" value="umbenennen"> Originaldateien umbenennen</label>
+      <label style="margin-top:4px"><input type="checkbox" id="perperson"> Je Person einen Unterordner anlegen</label>
     </div>
     <div class="field" style="margin-top:10px; align-items:center">
       <label class="hint" for="seiten" style="margin:0">Seiten pro Dokument auswerten</label>
@@ -295,7 +330,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 
 <main class="list" id="list">
   <div class="empty" id="empty">
-    <p><strong>Wählen Sie den Ordner mit den eingescannten Unterlagen.</strong></p>
+    <p><strong>Wählen Sie den Ordner mit den eingescannten Unterlagen – oder ziehen Sie Dateien bzw. einen Ordner einfach hierher.</strong></p>
     <p>Gelesen werden PDF-, JPG- und PNG-Dateien. Sie prüfen die Vorschläge, bevor etwas umbenannt wird.</p>
   </div>
   <div class="tablewrap hidden" id="tablewrap">
@@ -312,15 +347,34 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 
 <footer class="actions hidden" id="actions">
   <div class="summary" id="summary"></div>
+  <label class="onlycheck"><input type="checkbox" id="onlycheck"> Nur zu prüfende anzeigen</label>
   <button class="btn big" id="merge" hidden>Markierte zusammenführen</button>
   <button class="btn primary big" id="apply" disabled>Umbenennen</button>
 </footer>
+
+<dialog class="split" id="rulesdlg" aria-label="Erkennungsregeln">
+  <div class="dlghead"><h2>Erkennungsregeln</h2></div>
+  <div class="dlgbody">
+    <p class="hint">So erkennt das Programm den Dokumenttyp: Es sucht im gelesenen Text nach den folgenden Begriffen.
+      <strong>Eindeutige Begriffe</strong> zählen stark, <em>unterstützende Begriffe</em> schwach; Treffer in der
+      Überschrift zählen zusätzlich. Der Typ mit den meisten Punkten gewinnt – ist der Vorsprung klein, wird die
+      Zeile gelb markiert („Bitte prüfen“).</p>
+    <div id="rulesbody"></div>
+  </div>
+  <div class="dlgfoot">
+    <div class="dlginfo">Begriffe ändern oder Typen ergänzen kann Ihre IT in der Datei „regeln.js“ im Programmordner
+      (Anleitung: „Hinweise fuer die IT.txt“). Danach das Programm neu laden (F5).</div>
+    <button class="btn" id="rulesclose">Schließen</button>
+  </div>
+</dialog>
 
 <dialog class="split" id="splitdlg" aria-label="Datei teilen">
   <div class="dlghead"><h2>Datei teilen</h2><span class="file" id="splitname"></span></div>
   <div class="dlgbody">
     <p class="hint">Jede Seite wird gelesen und einem Dokumenttyp zugeordnet. Trennstellen werden vorgeschlagen –
-      klicken Sie zwischen zwei Seiten, um eine Trennstelle zu setzen oder zu entfernen. Das Original bleibt unverändert.</p>
+      klicken Sie zwischen zwei Seiten, um eine Trennstelle zu setzen oder zu entfernen. Ein Klick auf eine Seite
+      vergrößert sie. Leere Seiten (z. B. Rückseiten) werden erkannt und weggelassen – „behalten“ holt sie zurück.
+      Das Original bleibt unverändert.</p>
     <div class="pages" id="splitpages"></div>
   </div>
   <div class="dlgfoot">
@@ -329,6 +383,8 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <button class="btn primary" id="splitok" disabled>Teilen</button>
   </div>
 </dialog>
+
+<div class="zoom hidden" id="zoom"><img id="zoomimg" alt="Vergrößerte Seitenansicht"></div>
 
 <script src="../marke.js"></script>
 <script src="../regeln.js"></script>
@@ -346,7 +402,7 @@ const TYPES = R ? R.dokumenttypen.map((t) => t.name) : [];
 const UNKNOWN = (R && R.unbekannt) || "Sonstiges";
 const PLACEHOLDERS = ["{Nachname}", "{Vorname}", "{Dokumenttyp}", "{Datum}", "{Original}"];
 
-const state = { dir: null, items: [], persons: [], busy: false, running: 0 };
+const state = { dir: null, items: [], persons: [], busy: false, running: 0, done: new Set() };
 
 /* ---------- Einstellungen (nur Programm-Einstellungen, keine Personendaten) ---------- */
 const store = {
@@ -625,11 +681,58 @@ async function pickFolder() {
     setStatus("Der Ordner konnte nicht geöffnet werden. Sie können stattdessen einzelne Dateien auswählen.", undefined, true);
     $("#filepick").click(); return;
   }
+  await useDirectory(dir);
+}
+async function useDirectory(dir) {
   const items = [];
   for await (const [name, h] of dir.entries()) if (h.kind === "file" && EXT.test(name) && !name.startsWith("~$")) items.push({ name, handle: h });
-  state.dir = dir;
+  state.dir = dir; state.done = new Set();
   $("#folder").innerHTML = ""; const f = document.createElement("span"); f.innerHTML = "Ordner: <strong></strong>"; f.querySelector("strong").textContent = dir.name; $("#folder").appendChild(f);
   start(items);
+}
+/* Nur die NEUEN Dateien aus dem Ordner nachlesen (Scanner legt laufend ab);
+   bereits erledigte Zeilen verschwinden dabei aus der Übersicht. */
+async function rescanFolder() {
+  if (!state.dir || state.busy) return;
+  const before = state.items.length;
+  state.items = state.items.filter((i) => i.status !== "applied");
+  const cleaned = before !== state.items.length;
+  const have = new Set(state.items.map((i) => (i.originalName || i.name).toLowerCase()));
+  const fresh = [];
+  for await (const [name, h] of state.dir.entries())
+    if (h.kind === "file" && EXT.test(name) && !name.startsWith("~$") &&
+        !state.done.has(name.toLowerCase()) && !have.has(name.toLowerCase()))
+      fresh.push({ name, handle: h });
+  if (!fresh.length) {
+    render();
+    setStatus(cleaned ? "Erledigte Zeilen ausgeblendet. Keine neuen Dateien im Ordner." : "Keine neuen Dateien im Ordner.");
+    return;
+  }
+  await start(fresh, true);
+}
+/* Dateien oder einen ganzen Ordner aufs Fenster ziehen */
+function initDrop() {
+  const hasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes("Files");
+  for (const ev of ["dragover", "dragenter"]) addEventListener(ev, (e) => {
+    if (!hasFiles(e) || state.busy) return;
+    e.preventDefault(); document.body.classList.add("drag");
+  });
+  addEventListener("dragleave", (e) => { if (!e.relatedTarget) document.body.classList.remove("drag"); });
+  addEventListener("drop", async (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); document.body.classList.remove("drag");
+    if (state.busy) return;
+    const items = [...(e.dataTransfer.items || [])];
+    if (FS && items.length === 1 && typeof items[0].getAsFileSystemHandle === "function") {
+      try {
+        const h = await items[0].getAsFileSystemHandle();
+        if (h && h.kind === "directory") { await useDirectory(h); return; }
+      } catch {}
+    }
+    const files = [...e.dataTransfer.files].filter((f) => EXT.test(f.name));
+    if (files.length) pickFiles(files);
+    else setStatus("Darunter waren keine PDF-, JPG- oder PNG-Dateien.", undefined, true);
+  });
 }
 function pickFiles(files) {
   const items = [...files].filter((f) => EXT.test(f.name)).map((f) => ({ name: f.name, file: f }));
@@ -637,12 +740,14 @@ function pickFiles(files) {
   $("#folder").textContent = items.length + " Dateien ausgewählt";
   start(items);
 }
-async function start(items) {
+async function start(items, append) {
   items.sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }));
-  items.forEach((it, i) => Object.assign(it, { id: i, status: "wait", selected: true, type: "", nachname: "", vorname: "", datum: "", manual: {} }));
-  state.items = items;
+  const base = append ? state.items.length : 0;
+  items.forEach((it, i) => Object.assign(it, { id: base + i, status: "wait", selected: true, type: "", nachname: "", vorname: "", datum: "", manual: {} }));
+  state.items = append ? state.items.concat(items) : items;
   render();
-  if (!items.length) { setStatus("In diesem Ordner liegen keine PDF-, JPG- oder PNG-Dateien.", undefined, true); return; }
+  if (!state.items.length) { setStatus("In diesem Ordner liegen keine PDF-, JPG- oder PNG-Dateien.", undefined, true); return; }
+  if (!items.length) return;
   state.busy = true; updateActions();
   let done = 0;
   const queue = items.slice();
@@ -712,9 +817,17 @@ function newItem(props) {
   }, props);
 }
 
-const split = { item: null, pages: [], cuts: new Set(), bytes: null, auto: true, abort: false, running: false };
+const split = { item: null, pages: [], cuts: new Set(), bytes: null, doc: null, auto: true, abort: false, running: false };
 
 function canSplit(it) { return it.status === "done" && it.pages > 1 && /\.pdf$/i.test(it.name); }
+
+// Anteil dunkler Pixel – erkennt leere Seiten (Rückseiten beim Duplex-Scan)
+function inkRatio(canvas) {
+  const d = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+  let dark = 0; const n = d.length / 4;
+  for (let i = 0; i < d.length; i += 4) if ((d[i] + d[i + 1] + d[i + 2]) / 3 < 160) dark++;
+  return dark / n;
+}
 
 async function openSplit(it) {
   if (state.busy || split.running) return;
@@ -728,23 +841,33 @@ async function openSplit(it) {
     split.bytes = await fileBytes(it);
     const pdfjs = await pdfLib();
     const doc = await pdfjs.getDocument({ data: split.bytes.slice(), isEvalSupported: false }).promise;
+    split.doc = doc;   // bleibt für die Zoom-Ansicht geöffnet, wird beim Schließen freigegeben
     const total = doc.numPages;
+    // 1. Durchgang: alle Miniaturen sofort – auch bei 30+ Seiten ist der Überblick gleich da
     for (let p = 1; p <= total; p++) {
       if (split.abort) break;
       const page = await doc.getPage(p);
-      // Miniatur
       const base = page.getViewport({ scale: 1 });
-      const tvp = page.getViewport({ scale: 320 / Math.max(base.width, base.height) });
+      const tvp = page.getViewport({ scale: 440 / Math.max(base.width, base.height) });
       const tc2 = document.createElement("canvas"); tc2.width = Math.round(tvp.width); tc2.height = Math.round(tvp.height);
       const tctx = tc2.getContext("2d"); tctx.fillStyle = "#fff"; tctx.fillRect(0, 0, tc2.width, tc2.height);
       await page.render({ canvasContext: tctx, viewport: tvp }).promise;
-      const rec = { thumb: tc2.toDataURL("image/jpeg", 0.72), text: "", ocr: false, cls: null };
+      const rec = { thumb: tc2.toDataURL("image/jpeg", 0.75), ink: inkRatio(tc2), text: "", ocr: false, cls: null, leer: false, drop: false };
       split.pages.push(rec);
       addSplitPage(p, rec);
-      // Text der Seite (Textebene, sonst Texterkennung)
+      page.cleanup();
+      $("#splitinfo").textContent = `Seitenvorschau ${p} von ${total} …`;
+    }
+    // 2. Durchgang: Text und Dokumenttyp je Seite (leere Seiten überspringen die Texterkennung)
+    for (let p = 1; p <= total && !split.abort; p++) {
+      const rec = split.pages[p - 1];
+      const page = await doc.getPage(p);
+      const base = page.getViewport({ scale: 1 });
       const tcont = await page.getTextContent();
       let t = tcont.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join("");
-      if (t.replace(/\s/g, "").length < 40) {
+      if (t.replace(/\s/g, "").length < 15 && rec.ink < 0.004) {
+        rec.leer = true; rec.drop = true; t = "";
+      } else if (t.replace(/\s/g, "").length < 40) {
         const scale = Math.max(1, Math.min(2.5, 2600 / Math.max(base.width, base.height)));
         const vp = page.getViewport({ scale });
         const canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
@@ -759,7 +882,6 @@ async function openSplit(it) {
       page.cleanup();
       $("#splitinfo").textContent = p < total ? `Seite ${p} von ${total} gelesen …` : "";
     }
-    await doc.destroy();
     split.running = false;
     if (!split.abort) {
       if (split.auto) { proposeCuts(); }
@@ -780,18 +902,40 @@ function addSplitPage(p, rec) {
     wrap.appendChild(cut);
   }
   const card = document.createElement("div"); card.className = "page"; card.dataset.p = String(p);
-  const img = document.createElement("img"); img.src = rec.thumb; img.alt = "Seite " + p;
+  const img = document.createElement("img"); img.src = rec.thumb; img.alt = "Seite " + p; img.title = "Seite vergrößern";
+  img.onclick = () => zoomPage(p);
   const no = document.createElement("span"); no.className = "pno"; no.textContent = "Seite " + p;
   const ty = document.createElement("span"); ty.className = "ptype vage"; ty.textContent = "wird gelesen …";
-  card.append(img, no, ty);
+  const skip = document.createElement("button"); skip.type = "button"; skip.className = "skippage"; skip.textContent = "weglassen";
+  skip.title = "Diese Seite beim Teilen weglassen";
+  skip.onclick = () => { rec.drop = !rec.drop; card.classList.toggle("drop", rec.drop); skip.textContent = rec.drop ? "behalten" : "weglassen"; updateSplitInfo(); };
+  card.append(img, no, ty, skip);
   wrap.appendChild(card);
 }
 function markSplitPage(p, rec) {
-  const ty = $("#splitpages").querySelector(`.page[data-p="${p}"] .ptype`);
-  if (!ty) return;
-  if (rec.cls.sure) { ty.textContent = rec.cls.type; ty.className = "ptype"; ty.style.setProperty("--h", hue(rec.cls.type)); }
+  const card = $("#splitpages").querySelector(`.page[data-p="${p}"]`);
+  if (!card) return;
+  const ty = card.querySelector(".ptype"), skip = card.querySelector(".skippage");
+  if (rec.leer) { ty.textContent = "Leer"; ty.className = "ptype vage"; }
+  else if (rec.cls.sure) { ty.textContent = rec.cls.type; ty.className = "ptype"; ty.style.setProperty("--h", hue(rec.cls.type)); }
   else if (rec.cls.type !== UNKNOWN) { ty.textContent = rec.cls.type + "?"; ty.className = "ptype vage"; }
   else { ty.textContent = "unklar"; ty.className = "ptype vage"; }
+  card.classList.toggle("drop", rec.drop);
+  skip.textContent = rec.drop ? "behalten" : "weglassen";
+}
+async function zoomPage(p) {
+  if (!split.doc) return;
+  try {
+    const page = await split.doc.getPage(p);
+    const base = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: Math.min(3, 1600 / Math.max(base.width, base.height)) });
+    const canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+    const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    page.cleanup();
+    $("#zoomimg").src = canvas.toDataURL("image/jpeg", 0.85);
+    $("#zoom").classList.remove("hidden");
+  } catch (e) { console.error(e); }
 }
 function toggleCut(i) {
   if (split.cuts.has(i)) split.cuts.delete(i); else split.cuts.add(i);
@@ -813,27 +957,49 @@ function proposeCuts() {
     if (btn) btn.classList.add("on");
   }
 }
+function fmtPages(nums) {   // [0,1,3] → "1–2, 4" (1-basiert angezeigt)
+  const out = []; let s = null, prev = null;
+  const push = () => out.push(s === prev ? String(s + 1) : (s + 1) + "–" + (prev + 1));
+  for (const n of nums) {
+    if (s === null) { s = n; prev = n; continue; }
+    if (n === prev + 1) { prev = n; continue; }
+    push(); s = n; prev = n;
+  }
+  if (s !== null) push();
+  return out.join(", ");
+}
 function splitSegments() {
   const cuts = [...split.cuts].sort((a, b) => a - b);
   const starts = [0, ...cuts];
-  return starts.map((s, i) => {
-    const end = (cuts[i] !== undefined ? cuts[i] : split.pages.length) - 1;
-    const text = split.pages.slice(s, end + 1).map((r) => r.text).join("\n");
-    return { from: s, to: end, text, cls: classify(text) };
-  });
+  const segs = [];
+  for (let i = 0; i < starts.length; i++) {
+    const from = starts[i], to = (cuts[i] !== undefined ? cuts[i] : split.pages.length) - 1;
+    const kept = [];
+    for (let p = from; p <= to; p++) if (split.pages[p] && !split.pages[p].drop) kept.push(p);
+    if (!kept.length) continue;   // Abschnitt ohne behaltene Seiten entfällt
+    const text = kept.map((p) => split.pages[p].text).join("\n");
+    segs.push({ kept, text, cls: classify(text) });
+  }
+  return segs;
 }
 function updateSplitInfo() {
   const segs = splitSegments();
-  const label = (sg) => sg.cls.type + " (" + (sg.from === sg.to ? "Seite " + (sg.from + 1) : "Seiten " + (sg.from + 1) + "–" + (sg.to + 1)) + ")";
-  $("#splitinfo").textContent = segs.length < 2
-    ? "Keine Trennstelle gesetzt. Klicken Sie zwischen zwei Seiten, um dort zu trennen."
-    : "Ergibt " + segs.length + " Dateien: " + segs.map(label).join(" · ");
-  $("#splitok").textContent = segs.length < 2 ? "Teilen" : "In " + segs.length + " Dateien teilen";
-  $("#splitok").disabled = segs.length < 2 || split.running;
+  const dropped = split.pages.filter((r) => r.drop).length;
+  const label = (sg) => sg.cls.type + " (" + (sg.kept.length === 1 ? "Seite " : "Seiten ") + fmtPages(sg.kept) + ")";
+  let info;
+  if (!segs.length) info = "Alle Seiten sind weggelassen – bitte mindestens eine Seite behalten.";
+  else if (segs.length < 2 && !dropped) info = "Keine Trennstelle gesetzt. Klicken Sie zwischen zwei Seiten, um dort zu trennen.";
+  else info = "Ergibt " + segs.length + (segs.length === 1 ? " Datei: " : " Dateien: ") + segs.map(label).join(" · ");
+  if (dropped) info += ` – ${dropped} ${dropped === 1 ? "Seite wird" : "Seiten werden"} weggelassen.`;
+  $("#splitinfo").textContent = info;
+  $("#splitok").textContent = segs.length >= 2 ? "In " + segs.length + " Dateien teilen"
+    : segs.length === 1 && dropped ? "Ohne weggelassene Seiten speichern" : "Teilen";
+  $("#splitok").disabled = split.running || !segs.length || (segs.length < 2 && !dropped);
 }
 async function doSplit() {
   const segs = splitSegments();
-  if (segs.length < 2 || !split.item) return;
+  const dropped = split.pages.filter((r) => r.drop).length;
+  if (!split.item || !segs.length || (segs.length < 2 && !dropped)) return;
   $("#splitok").disabled = true; $("#splitinfo").textContent = "Die Dateien werden erstellt …";
   try {
     const src = await PDFLib.PDFDocument.load(split.bytes, { ignoreEncryption: true });
@@ -843,15 +1009,15 @@ async function doSplit() {
     const items = [];
     for (const [k, sg] of segs.entries()) {
       const out = await PDFLib.PDFDocument.create();
-      const idx = []; for (let i = sg.from; i <= sg.to; i++) idx.push(i);
-      (await out.copyPages(src, idx)).forEach((pg) => out.addPage(pg));
+      (await out.copyPages(src, sg.kept)).forEach((pg) => out.addPage(pg));
       const data = await out.save();
-      const pageRecs = split.pages.slice(sg.from, sg.to + 1);
+      const pageRecs = sg.kept.map((p) => split.pages[p]);
       const ni = newItem({
-        name: `${base}_Teil${k + 1}.pdf`, data, size: data.length,
-        pages: sg.to - sg.from + 1, thumb: pageRecs[0].thumb,
+        name: segs.length === 1 ? `${base}_bereinigt.pdf` : `${base}_Teil${k + 1}.pdf`,
+        data, size: data.length,
+        pages: sg.kept.length, thumb: pageRecs[0].thumb,
         text: sg.text, pageTexts: pageRecs.map((r) => r.text), ocr: pageRecs.some((r) => r.ocr),
-        partInfo: `${sg.from === sg.to ? "Seite " + (sg.from + 1) : "Seiten " + (sg.from + 1) + "–" + (sg.to + 1)} aus „${origName}“`,
+        partInfo: `${sg.kept.length === 1 ? "Seite " : "Seiten "}${fmtPages(sg.kept)} aus „${origName}“`,
       });
       analyse(ni);
       items.push(ni);
@@ -861,7 +1027,9 @@ async function doSplit() {
     it.selected = false; it.splitInto = items.length;
     $("#splitdlg").close();
     render();
-    setStatus(`„${origName}“ wurde in ${items.length} Dateien geteilt. Das Original bleibt unverändert und ist abgewählt.`);
+    setStatus(items.length === 1
+      ? `„${origName}“ wurde ohne die weggelassenen Seiten neu erstellt. Das Original bleibt unverändert und ist abgewählt.`
+      : `„${origName}“ wurde in ${items.length} Dateien geteilt. Das Original bleibt unverändert und ist abgewählt.`);
   } catch (e) {
     console.error(e);
     $("#splitinfo").textContent = "Teilen fehlgeschlagen: " + (e && e.message || e);
@@ -920,6 +1088,20 @@ function discardDerived(it) {
   render();
 }
 
+/* ---------- Erkennungsregeln anzeigen (nur Ansicht) ---------- */
+function openRules() {
+  const body = $("#rulesbody"); body.innerHTML = "";
+  for (const t of R.dokumenttypen) {
+    const d = document.createElement("div"); d.className = "rule";
+    const h = document.createElement("span"); h.className = "tabname"; h.style.setProperty("--h", hue(t.name)); h.textContent = t.name;
+    const kws = document.createElement("div"); kws.className = "kws";
+    for (const k of t.stark || []) { const s = document.createElement("span"); s.className = "kw stark"; s.textContent = k; s.title = "Eindeutiger Begriff (zählt stark)"; kws.appendChild(s); }
+    for (const k of t.schwach || []) { const s = document.createElement("span"); s.className = "kw schwach"; s.textContent = k; s.title = "Unterstützender Begriff (zählt schwach)"; kws.appendChild(s); }
+    d.append(h, kws); body.appendChild(d);
+  }
+  $("#rulesdlg").showModal();
+}
+
 /* ---------- Darstellung ---------- */
 function rowState(it) {
   if (it.status === "wait") return ["wait", "Wartet"];
@@ -962,7 +1144,7 @@ function renderRow(it) {
   const c3 = td("orig"); c3.textContent = it.originalName || it.name;
   if (it.pages) { const sm = document.createElement("small"); sm.textContent = (it.pages === 1 ? "1 Seite" : it.pages + " Seiten") + (it.ocr ? ", Texterkennung" : ""); c3.appendChild(sm); }
   if (it.partInfo) { const sm = document.createElement("small"); sm.textContent = it.partInfo; c3.appendChild(sm); }
-  if (it.splitInto) { const sm = document.createElement("small"); sm.textContent = `In ${it.splitInto} Dateien geteilt`; c3.appendChild(sm); }
+  if (it.splitInto) { const sm = document.createElement("small"); sm.textContent = it.splitInto === 1 ? "Ohne leere Seiten neu erstellt" : `In ${it.splitInto} Dateien geteilt`; c3.appendChild(sm); }
   if (canSplit(it)) {
     const sp = document.createElement("button"); sp.className = "btn mini split"; sp.textContent = "Teilen …";
     sp.title = "Datei in mehrere Dokumente aufteilen"; sp.onclick = () => openSplit(it);
@@ -1010,6 +1192,13 @@ function renderRow(it) {
 
   const c8 = td(); const [cls, label] = rowState(it); const st = document.createElement("span"); st.className = "state " + cls; st.textContent = label; c8.appendChild(st);
   it.stateEl = st;
+  applyRowFilter(it);
+}
+/* Filter „Nur zu prüfende anzeigen“: blendet grüne (sichere/erledigte) Zeilen aus.
+   Wird bewusst nur beim Neuzeichnen angewendet, damit eine Zeile nicht mitten im Tippen verschwindet. */
+function applyRowFilter(it) {
+  if (!it.tr) return;
+  it.tr.classList.toggle("hidden", $("#onlycheck").checked && rowState(it)[0] === "ok");
 }
 function updatePreview(it) {
   if (!it.previewEl) return;
@@ -1030,6 +1219,7 @@ function updateActions() {
   $("#apply").textContent = !state.dir ? "Als ZIP-Datei speichern" : mode === "kopie" ? "Umbenannte Kopien speichern" : "Dateien umbenennen";
   $("#apply").disabled = state.busy || sel.length === 0;
   $("#merge").hidden = state.busy || sel.length < 2 || !window.PDFLib;
+  $("#rescan").hidden = !state.dir || state.busy;
 }
 
 /* ---------- Umbenennen ---------- */
@@ -1064,45 +1254,63 @@ async function applyFolder(sel, log, now) {
       (await state.dir.requestPermission({ mode: "readwrite" })) !== "granted") {
     setStatus("Ohne Schreibrecht für den Ordner kann nichts gespeichert werden.", undefined, true); return;
   }
-  const target = mode === "kopie" ? await state.dir.getDirectoryHandle("umbenannt", { create: true }) : state.dir;
-  const taken = new Set();
-  for await (const [name] of target.entries()) taken.add(name.toLowerCase());
-  if (mode === "umbenennen") for (const it of sel) if (!it.data) taken.delete(it.name.toLowerCase());
+  const baseTarget = mode === "kopie" ? await state.dir.getDirectoryHandle("umbenannt", { create: true }) : state.dir;
+  const perPerson = $("#perperson").checked;
+  // je Zielordner (Hauptordner oder Personen-Unterordner) eigene Liste vergebener Namen
+  const folders = new Map();
+  async function folderFor(key, dirHandle) {
+    if (!folders.has(key)) {
+      const taken = new Set();
+      for await (const [name] of dirHandle.entries()) taken.add(name.toLowerCase());
+      folders.set(key, { dir: dirHandle, taken });
+    }
+    return folders.get(key);
+  }
+  const root = await folderFor("", baseTarget);
+  if (mode === "umbenennen" && !perPerson) for (const it of sel) if (!it.data) root.taken.delete(it.name.toLowerCase());
   let ok = 0, fail = 0;
   for (const [i, it] of sel.entries()) {
     setStatus(`Speichere ${i + 1} von ${sel.length} …`, i / sel.length);
-    const wanted = buildName(it);
-    const newName = uniqueName(wanted, taken);
     const oldName = it.name;
     try {
+      let f = root, sub = "";
+      if (perPerson) {
+        sub = (clean(it.nachname) || "Unbekannt") + (clean(it.vorname) ? "_" + clean(it.vorname) : "");
+        f = await folderFor(sub, await baseTarget.getDirectoryHandle(sub, { create: true }));
+      }
+      const newName = uniqueName(buildName(it), f.taken);
       if (it.data) {
         // Durch Teilen oder Zusammenführen neu erstellte Datei: immer neu schreiben
-        const fh = await target.getFileHandle(newName, { create: true });
+        const fh = await f.dir.getFileHandle(newName, { create: true });
         const w = await fh.createWritable(); await w.write(it.data); await w.close();
         it.appliedText = "Neu erstellt";
       } else if (mode === "kopie") {
-        const fh = await target.getFileHandle(newName, { create: true });
+        const fh = await f.dir.getFileHandle(newName, { create: true });
         const w = await fh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
         it.appliedText = "Kopie gespeichert";
-      } else if (newName !== oldName) {
+      } else if (perPerson || newName !== oldName) {
         let moved = false;
-        if (typeof it.handle.move === "function") { try { await it.handle.move(newName); moved = true; } catch {} }
+        if (typeof it.handle.move === "function") {
+          try { if (perPerson) await it.handle.move(f.dir, newName); else await it.handle.move(newName); moved = true; } catch {}
+        }
         if (!moved) {
-          const fh = await target.getFileHandle(newName, { create: true });
+          const fh = await f.dir.getFileHandle(newName, { create: true });
           const w = await fh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
-          await target.removeEntry(oldName);
+          await state.dir.removeEntry(oldName);
           it.handle = fh;
         }
-        it.appliedText = "Umbenannt";
+        it.appliedText = sub ? "Umbenannt → " + sub : "Umbenannt";
       } else it.appliedText = "Name unverändert";
+      const rel = (sub ? sub + "/" : "") + newName;
       it.originalName = oldName; it.name = newName; it.status = "applied"; ok++;
-      log.push(csvLine([now, oldName, newName, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, it.partInfo || ""]));
+      state.done.add(oldName.toLowerCase()); state.done.add(newName.toLowerCase());
+      log.push(csvLine([now, oldName, rel, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, it.partInfo || ""]));
     } catch (e) {
       console.error(e); it.status = "failed"; it.error = "Speichern fehlgeschlagen"; fail++;
     }
     renderRow(it);
   }
-  const lf = await target.getFileHandle(`Protokoll_${stamp()}.csv`, { create: true });
+  const lf = await baseTarget.getFileHandle(`Protokoll_${stamp()}.csv`, { create: true });
   const lw = await lf.createWritable(); await lw.write("\ufeff" + log.join("\r\n") + "\r\n"); await lw.close();
   setStatus(`${ok} ${ok === 1 ? "Datei" : "Dateien"} ${mode === "kopie" ? "im Unterordner „umbenannt“ gespeichert" : "umbenannt"}${fail ? `, ${fail} fehlgeschlagen` : ""}. Ein Protokoll liegt im selben Ordner.`, undefined, fail > 0);
 }
@@ -1133,12 +1341,16 @@ function makeZip(files) {
   return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: "application/zip" });
 }
 async function applyZip(sel, log, now) {
-  const taken = new Set(), files = [];
+  const perPerson = $("#perperson").checked;
+  const taken = new Map(), files = [];
+  const takenFor = (k) => { if (!taken.has(k)) taken.set(k, new Set()); return taken.get(k); };
   for (const it of sel) {
-    const newName = uniqueName(buildName(it), taken);
-    files.push({ name: newName, data: it.data || new Uint8Array(await it.file.arrayBuffer()) });
-    log.push(csvLine([now, it.name, newName, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, it.partInfo || ""]));
-    it.originalName = it.name; it.name = newName; it.status = "applied"; it.appliedText = "In ZIP-Datei"; renderRow(it);
+    const sub = perPerson ? (clean(it.nachname) || "Unbekannt") + (clean(it.vorname) ? "_" + clean(it.vorname) : "") : "";
+    const newName = uniqueName(buildName(it), takenFor(sub));
+    const rel = (sub ? sub + "/" : "") + newName;
+    files.push({ name: rel, data: it.data || new Uint8Array(await it.file.arrayBuffer()) });
+    log.push(csvLine([now, it.name, rel, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, it.partInfo || ""]));
+    it.originalName = it.name; it.name = newName; it.status = "applied"; it.appliedText = sub ? "In ZIP-Datei → " + sub : "In ZIP-Datei"; renderRow(it);
   }
   files.push({ name: `Protokoll_${stamp()}.csv`, data: new TextEncoder().encode("\ufeff" + log.join("\r\n") + "\r\n") });
   const a = document.createElement("a"); a.href = URL.createObjectURL(makeZip(files)); a.download = `Unterlagen_umbenannt_${stamp()}.zip`;
@@ -1204,6 +1416,11 @@ function init() {
   $("#filepick").onchange = (e) => { if (e.target.files.length) pickFiles(e.target.files); e.target.value = ""; };
   $("#muster").oninput = () => { store.set("muster", $("#muster").value); state.items.forEach(updatePreview); };
   document.querySelectorAll("input[name=ablage]").forEach((r) => r.onchange = () => { store.set("ablage", setting("ablage")); updateActions(); });
+  $("#perperson").checked = store.get("perperson", "0") === "1";
+  $("#perperson").onchange = () => store.set("perperson", $("#perperson").checked ? "1" : "0");
+  $("#rescan").onclick = rescanFolder;
+  $("#rules").onclick = openRules;
+  $("#rulesclose").onclick = () => $("#rulesdlg").close();
   $("#seiten").onchange = () => store.set("seiten", $("#seiten").value);
   let deb; const re = () => { clearTimeout(deb); deb = setTimeout(reanalyseAll, 250); };
   $("#vNach").oninput = re; $("#vVor").oninput = re;
@@ -1219,10 +1436,17 @@ function init() {
   };
   $("#all").onchange = (e) => { state.items.forEach((i) => { i.selected = e.target.checked; renderRow(i); }); updateActions(); };
   $("#apply").onclick = apply;
+  $("#onlycheck").onchange = () => state.items.forEach(applyRowFilter);
+  initDrop();
   $("#merge").onclick = mergeSelected;
   $("#splitok").onclick = doSplit;
   $("#splitcancel").onclick = closeSplit;
   $("#splitdlg").addEventListener("cancel", () => { split.abort = true; });
+  $("#splitdlg").addEventListener("close", () => {
+    split.abort = true; $("#zoom").classList.add("hidden");
+    if (split.doc) { split.doc.destroy(); split.doc = null; }
+  });
+  $("#zoom").onclick = () => $("#zoom").classList.add("hidden");
 }
 init();
 </script>

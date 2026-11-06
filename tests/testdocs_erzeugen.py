@@ -76,13 +76,15 @@ for i, l in enumerate(["Herrn", "Hans Mustermann", "Lindenweg 4", "12345 Musters
 c.save()
 open("personen.csv", "w", encoding="utf-8").write("Nachname;Vorname\nMustermann;Erika\nMustermann;Hans\nSchulz;Karin\n")
 
-# Stapel-Scan: Antrag (2 Seiten) und Kontoauszug (2 Seiten) in EINER Datei → zum Testen der Funktion „Teilen“
+# Stapel-Scan: Antrag (2 Seiten), eine LEERE Rückseite, Kontoauszug (2 Seiten) in EINER Datei
+# → zum Testen der Funktionen „Teilen“ und „leere Seiten weglassen“
 scan_mehrseitig("Scan_0007_Stapel.pdf", [
   ["#Antrag auf Leistungen der Grundsicherung", "#im Alter und bei Erwerbsminderung (SGB XII)", "",
    "1. Angaben zur antragstellenden Person", "Name, Vorname: Mustermann, Erika", "Geburtsdatum: 12.08.1955",
    "Anschrift: Lindenweg 4, 12345 Musterstadt", "", "Hiermit beantrage ich Leistungen nach dem SGB XII."],
   ["#Abschnitt 3 - Einkommen", "", "Renteneinkommen: 840,55 EUR monatlich", "Sonstiges Einkommen: keines", "",
    "Ich versichere die Richtigkeit der Angaben.", "Musterstadt, den 05.11.2026", "Unterschrift der Antragstellerin"],
+  [],   # leere Rückseite (Duplex-Scan)
   ["#Sparkasse Musterstadt", "Frau", "Erika Mustermann", "Lindenweg 4", "12345 Musterstadt", "",
    "#Kontoauszug 09/2026", "IBAN DE12 3456 7890 1234 5678 90", "Alter Kontostand vom 31.08.2026     389,70 EUR",
    "Buchungstag  Wertstellung  Vorgang                    Betrag", "01.09.  01.09.  Lastschrift Miete            -520,00",

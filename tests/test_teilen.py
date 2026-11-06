@@ -22,12 +22,15 @@ async def main():
         P.check("Mehrtyp-Hinweis", await pg.evaluate("state.items[0].multiHint === true"))
         P.check("Teilen-Knopf sichtbar", await pg.is_visible("button.split"))
 
-        # B) Dialog: Seiten lesen, Vorschlag prüfen, Trennstelle von Hand ändern
+        # B) Dialog: Seiten lesen, Vorschlag prüfen, leere Seite erkannt, Trennstelle von Hand ändern
         await pg.click("button.split")
-        await pg.wait_for_function("!split.running && split.pages.length === 4", timeout=240000)
+        await pg.wait_for_function("!split.running && split.pages.length === 5", timeout=240000)
+        P.check("Leere Seite erkannt", await pg.evaluate("split.pages[2].leer && split.pages[2].drop"))
+        P.check("Andere Seiten nicht leer", await pg.evaluate("split.pages.filter(r=>r.leer).length") == 1)
         cuts = await pg.evaluate("[...split.cuts].sort().join(',')")
-        P.check("Trennstelle vor Seite 3 vorgeschlagen", cuts == "2", f"→ '{cuts}'")
+        P.check("Trennstelle vor Seite 4 vorgeschlagen", cuts == "3", f"→ '{cuts}'")
         P.check("Knopf: In 2 Dateien teilen", await pg.inner_text("#splitok") == "In 2 Dateien teilen")
+        P.check("Hinweis auf weggelassene Seite", "1 Seite wird weggelassen" in await pg.inner_text("#splitinfo"))
         await pg.click(".cut[data-i='1']")
         P.check("Von Hand: 3 Teile", await pg.inner_text("#splitok") == "In 3 Dateien teilen")
         await pg.click(".cut[data-i='1']")
@@ -55,7 +58,7 @@ async def main():
         n = await pg.evaluate(PAGECOUNT, base64.b64encode(teil).decode())
         P.check("Teil hat 2 Seiten", n == 2, n)
         log = z.read([x for x in names if x.startswith("Protokoll")][0]).decode("utf-8-sig")
-        P.check("Hinweis im Protokoll", "Seiten 1–2" in log and "Scan_0007_Stapel.pdf" in log)
+        P.check("Hinweis im Protokoll", "Seiten 1–2" in log and "Seiten 4–5" in log and "Scan_0007_Stapel.pdf" in log, log)
 
         # E) Zusammenführen: PDF + Foto → eine PDF mit 2 Seiten
         await pg.goto(APP)

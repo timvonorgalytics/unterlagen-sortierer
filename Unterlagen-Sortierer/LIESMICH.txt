@@ -21,7 +21,9 @@ STARTEN
 
 
 SO GEHT'S
-  1. "Ordner wählen" klicken und den Ordner mit den Scans auswählen.
+  1. "Ordner wählen" klicken und den Ordner mit den Scans auswählen -
+     oder die Dateien bzw. den ganzen Ordner einfach mit der Maus auf
+     das Programmfenster ziehen.
      Beim ersten Mal fragt Edge, ob das Programm den Ordner bearbeiten
      darf: "Dateien bearbeiten" bzw. "Zulassen" wählen.
 
@@ -38,6 +40,8 @@ SO GEHT'S
      Dokumenttyp und Name lassen sich in jeder Zeile ändern.
      Ein Klick auf das kleine Vorschaubild öffnet die Datei.
      Zeilen ohne Haken werden nicht umbenannt.
+     Bei vielen Dateien hilft unten der Haken "Nur zu prüfende
+     anzeigen": grüne, sichere Zeilen werden dann ausgeblendet.
 
   5. Unten rechts auf den Knopf klicken:
        "Umbenannte Kopien speichern" -> Kopien im Unterordner "umbenannt",
@@ -48,14 +52,36 @@ SO GEHT'S
   Jeder Durchgang legt ein Protokoll (Protokoll_Datum.csv) in den Ordner.
   Es lässt sich mit Excel öffnen und zeigt alte und neue Dateinamen.
 
+  Die umbenannten Dateien liegen als einzelne Dateien im Ordner und
+  lassen sich von dort direkt per Drag & Drop in die eAkte ziehen.
+  Mit dem Haken "Je Person einen Unterordner anlegen" entsteht pro
+  Person ein eigener Ordner - praktisch, wenn Unterlagen mehrerer
+  Personen in einem Durchgang verarbeitet werden.
+
+MEHRERE PERSONEN UND LAUFENDER BETRIEB
+  Ohne Namens-Vorgabe erkennt das Programm den Namen je Dokument -
+  Unterlagen mehrerer Personen können also zusammen in einem Ordner
+  liegen. Legt die Scannersoftware laufend neue Dateien ab, holt
+  "Neue Dateien einlesen" nur die neuen dazu; bereits erledigte
+  Zeilen verschwinden dabei aus der Liste.
+
+ERKENNUNGSREGELN ANSEHEN
+  Der Knopf "Erkennungsregeln" oben rechts zeigt, an welchen
+  Begriffen das Programm jeden Dokumenttyp erkennt. Ändern kann
+  die Begriffe Ihre IT in der Datei regeln.js (siehe "Hinweise
+  fuer die IT.txt").
+
 
 STAPEL-SCANS TEILEN
   Stecken mehrere Dokumente in einer Datei (z. B. Antrag und
   Kontoauszüge in einem Scan), zeigt die Zeile "Teilen ..." an.
-  Ein Klick öffnet alle Seiten als Vorschau. Das Programm schlägt
-  Trennstellen vor; ein Klick zwischen zwei Seiten setzt oder
-  entfernt eine Trennstelle. "In N Dateien teilen" erstellt für
-  jeden Abschnitt eine neue PDF-Datei mit eigenem Typ und Namen.
+  Ein Klick öffnet alle Seiten als Vorschau; ein Klick auf eine
+  Seite vergrößert sie. Das Programm schlägt Trennstellen vor;
+  ein Klick zwischen zwei Seiten setzt oder entfernt eine
+  Trennstelle. Leere Rückseiten (Duplex-Scan) werden erkannt und
+  weggelassen - "behalten" holt sie zurück, "weglassen" entfernt
+  auch andere Seiten. "In N Dateien teilen" erstellt für jeden
+  Abschnitt eine neue PDF-Datei mit eigenem Typ und Namen.
   Das Original bleibt unverändert und wird nur abgewählt.
 
 DATEIEN ZUSAMMENFÜHREN
