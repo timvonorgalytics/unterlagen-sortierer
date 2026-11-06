@@ -18,7 +18,8 @@ direkt per Drag & Drop in die eAkte ziehen, wo der Dateiname sofort sagt, was dr
 
 - **Erkennen & Umbenennen:** Dokumenttyp über editierbare Suchbegriffe (24 Typen ab Werk),
   Person über Formularfelder, Anschrift, Absender oder Briefanrede;
-  Dateinamen-Muster frei kombinierbar; Ampel-Status je Datei, alles von Hand korrigierbar
+  Dateinamen-Muster frei kombinierbar; Ampel-Status je Datei, alles von Hand korrigierbar;
+  verdreht eingescannte Seiten werden automatisch erkannt, gerade angezeigt und gerade gespeichert
 - **Stapel-Scans teilen:** Seitenvorschau mit Zoom, automatisch vorgeschlagene Trennstellen,
   leere Rückseiten werden erkannt und weggelassen — Originale bleiben unverändert
 - **Zusammenführen:** mehrere Dateien (auch Fotos) zu einer PDF verbinden

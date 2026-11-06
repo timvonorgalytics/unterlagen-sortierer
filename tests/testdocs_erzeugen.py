@@ -91,3 +91,11 @@ scan_mehrseitig("Scan_0007_Stapel.pdf", [
   ["#Sparkasse Musterstadt - Seite 2", "Fortsetzung Kontoauszug 09/2026", "",
    "Buchungstag  Wertstellung  Vorgang                    Betrag", "18.09.  18.09.  Lastschrift Strom             -62,00",
    "22.09.  22.09.  Ueberweisung Apotheke             -18,40"]], rot=0.4)
+
+# Um 90 Grad verdreht eingescanntes Blatt – liegt im Unterordner extra/, damit die übrigen
+# Tests ihre Dateizahlen behalten. Genutzt von test_drehen.py (automatische Dreh-Erkennung).
+os.makedirs("extra", exist_ok=True)
+_gedreht = _blatt(["#Mietbescheinigung", "", "Hiermit wird bescheinigt, dass", "Frau Erika Mustermann",
+  "Lindenweg 4, 12345 Musterstadt", "seit dem 01.04.2019 zur Miete wohnt.",
+  "Grundmiete: 420,00 EUR monatlich", "", "Musterstadt, 02.11.2026", "Klaus Becker"], 0.3, True)
+_gedreht.transpose(Image.ROTATE_90).convert("RGB").save(os.path.join("extra", "Scan_Gedreht.pdf"), "PDF", resolution=200)

@@ -18,7 +18,7 @@ jobs:
           python-version: "3.12"
       - name: Abhängigkeiten installieren
         run: |
-          pip install playwright pillow reportlab
+          pip install playwright pillow reportlab pypdf
           python -m playwright install --with-deps chromium
       - name: Release-ZIP bauen (führt alle Tests aus)
         run: bash tools/release_bauen.sh

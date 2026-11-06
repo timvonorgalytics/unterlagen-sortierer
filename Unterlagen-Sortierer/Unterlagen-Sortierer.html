@@ -249,6 +249,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   background: var(--sheet); color: var(--muted); cursor: pointer; padding: 1px 6px;
 }
 .page .skippage:hover { border-color: var(--accent); color: var(--ink); }
+.page .rotpage { right: auto; left: 10px; }
 .page.drop img { opacity: .3; }
 .page.drop .ptype { opacity: .5; }
 .ptype {
@@ -416,15 +417,16 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <button class="btn" id="splitcancel">Abbrechen</button>
     <button class="btn primary" id="splitok" disabled>Teilen</button>
   </div>
+  <!-- Liegt IM Dialog, damit die Vergrößerung über dem modalen Dialog (Top-Layer) erscheint -->
+  <div class="zoom hidden" id="zoom"><img id="zoomimg" alt="Vergrößerte Seitenansicht"></div>
 </dialog>
-
-<div class="zoom hidden" id="zoom"><img id="zoomimg" alt="Vergrößerte Seitenansicht"></div>
 
 <div class="pv hidden" id="preview">
   <div class="pvbox">
     <div class="pvhead">
       <span class="pvtitle" id="pvtitle"></span>
       <button class="btn" id="pvcopy">Text kopieren</button>
+      <button class="btn" id="pvrot" title="Seite um 90 Grad drehen – die Drehung wird beim Speichern übernommen">Seite drehen</button>
       <button class="btn" id="pvext">In neuem Fenster öffnen</button>
       <button class="btn" id="pvclose">Schließen</button>
     </div>
@@ -546,6 +548,29 @@ function ocr() {
 function withTimeout(promise, ms) {
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("Zeitüberschreitung")), ms))]);
 }
+/* Texterkennung mit Dreh-Erkennung: Liefert die Seite aufrecht kaum brauchbaren Text,
+   wird sie um 90/270/180 Grad gedreht erneut gelesen und die beste Richtung übernommen.
+   rot = Drehung im Uhrzeigersinn, die die Seite gerade stellt (0/90/180/270). */
+async function ocrSmart(canvas) {
+  const sched = await ocr();
+  // Güte einer Lesung: Konfidenz, abgewertet, wenn kaum echte Wörter herauskommen –
+  // seitwärts gelesener Text bekommt von Tesseract sonst noch Konfidenz um 45.
+  const quality = (r) => {
+    const text = r.data.text || "";
+    if (text.replace(/\s/g, "").length < 25) return 0;
+    const words = (text.match(/[A-Za-zÄÖÜäöüß]{4,}/g) || []).filter((w) => /[aeiouäöü]/i.test(w)).length;
+    return (r.data.confidence || 0) * Math.min(1, words / 8);
+  };
+  let best = await sched.addJob("recognize", canvas), bestRot = 0;
+  if (quality(best) < 50) {
+    for (const rot of [90, 270, 180]) {
+      const r = await sched.addJob("recognize", rotateCanvas(canvas, rot));
+      if (quality(r) > quality(best)) { best = r; bestRot = rot; }
+    }
+    if (quality(best) === 0) bestRot = 0;   // praktisch leere Seite: keine Drehung behaupten
+  }
+  return { text: best.data.text, rot: bestRot };
+}
 
 /* ---------- Text aus einer Datei holen ---------- */
 async function readText(item) {
@@ -553,7 +578,7 @@ async function readText(item) {
   item.size = file.size;
   const ext = item.name.split(".").pop().toLowerCase();
   let text = "", ocrUsed = false;
-  item.pageTexts = [];
+  item.pageTexts = []; item.pageRot = [];
   if (ext === "pdf") {
     const pdfjs = await pdfLib();
     const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
@@ -571,22 +596,15 @@ async function readText(item) {
       const t = tc.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join("");
       const hatText = t.replace(/\s/g, "").length >= 40;
       let canvas = null;
-      if (p === 1 || !hatText) {
-        const base = page.getViewport({ scale: 1 });
-        const scale = Math.max(1, Math.min(2.5, 2600 / Math.max(base.width, base.height)));
-        const vp = page.getViewport({ scale });
-        canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
-        const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        if (p === 1) item.thumb = thumbnail(canvas);
-      }
-      let pt = null;
+      if (p === 1 || !hatText) canvas = await renderPage(page, ocrScale(page));
+      let pt = null, rot = 0;
       if (hatText) pt = t;
       else if (inkRatio(canvas) < 0.004) pt = "";              // leere Seite: kein OCR nötig
-      else if (ocrBudget > 0) { const r = await (await ocr()).addJob("recognize", canvas); pt = r.data.text; ocrUsed = true; ocrBudget--; }
+      else if (ocrBudget > 0) { const r = await ocrSmart(canvas); pt = r.text; rot = r.rot; ocrUsed = true; ocrBudget--; }
+      if (p === 1 && canvas) { item.thumb = thumbnail(rotateCanvas(canvas, rot)); item.thumbRot = rot; }
       page.cleanup();
       if (pt === null) break;                                  // Budget aufgebraucht – Rest nicht lesen
-      item.pageTexts.push(pt); text += pt + "\n"; read++;
+      item.pageTexts.push(pt); item.pageRot[p - 1] = rot; text += pt + "\n"; read++;
     }
     item.pagesRead = read;
     await doc.destroy();
@@ -595,9 +613,10 @@ async function readText(item) {
     const f = Math.min(1, 3000 / Math.max(bmp.width, bmp.height));
     const canvas = document.createElement("canvas"); canvas.width = Math.round(bmp.width * f); canvas.height = Math.round(bmp.height * f);
     canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    item.thumb = thumbnail(canvas); item.pages = 1; item.pagesRead = 1;
-    const r = await (await ocr()).addJob("recognize", canvas); text = r.data.text; ocrUsed = true;
-    item.pageTexts = [text];
+    item.pages = 1; item.pagesRead = 1;
+    const r = await ocrSmart(canvas); text = r.text; ocrUsed = true;
+    item.thumb = thumbnail(rotateCanvas(canvas, r.rot)); item.thumbRot = r.rot;
+    item.pageTexts = [text]; item.pageRot = [r.rot];
   }
   item.ocr = ocrUsed;
   return text;
@@ -607,6 +626,44 @@ function thumbnail(canvas) {
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   c.getContext("2d").drawImage(canvas, 0, 0, w, h);
   return c.toDataURL("image/jpeg", 0.7);
+}
+/* Eine PDF-Seite auf ein weißes Canvas zeichnen – EIN Helfer für alle Stellen */
+async function renderPage(page, scale, rot) {
+  const vp = page.getViewport({ scale });
+  const c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+  const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  return rot ? rotateCanvas(c, rot) : c;
+}
+// Maßstab für die Texterkennung: nie kleiner als das Original, Kappe 2,5 (Ziel ~2600 px Kantenlänge)
+function ocrScale(page) { const b = page.getViewport({ scale: 1 }); return Math.max(1, Math.min(2.5, 2600 / Math.max(b.width, b.height))); }
+// Maßstab für die Anzeige: auf maxDim Kantenlänge einpassen, Kappe 3
+function fitScale(page, maxDim) { const b = page.getViewport({ scale: 1 }); return Math.min(3, maxDim / Math.max(b.width, b.height)); }
+// Canvas-Inhalt um 90/180/270 Grad im Uhrzeigersinn drehen
+function rotateCanvas(src, rot) {
+  if (!rot) return src;
+  const swap = rot % 180 !== 0;
+  const c = document.createElement("canvas"); c.width = swap ? src.height : src.width; c.height = swap ? src.width : src.height;
+  const ctx = c.getContext("2d");
+  ctx.translate(c.width / 2, c.height / 2); ctx.rotate(rot * Math.PI / 180);
+  ctx.drawImage(src, -src.width / 2, -src.height / 2);
+  return c;
+}
+function urlToCanvas(url) {
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => { const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext("2d").drawImage(im, 0, 0); res(c); };
+    im.onerror = () => rej(new Error("Bild nicht lesbar"));
+    im.src = url;
+  });
+}
+/* Miniatur eines Objekts (Zeile oder Dialog-Seite) auf die Drehung rot bringen.
+   obj.thumb ist die Daten-URL, obj.thumbRot die bereits eingerechnete Drehung. */
+async function setRotDisplay(obj, rot) {
+  const cur = obj.thumbRot || 0;
+  if (!obj.thumb || rot === cur) { obj.thumbRot = rot; return; }
+  try { obj.thumb = rotateCanvas(await urlToCanvas(obj.thumb), (rot - cur + 360) % 360).toDataURL("image/jpeg", 0.75); } catch {}
+  obj.thumbRot = rot;
 }
 
 /* ---------- Dokumenttyp bestimmen ---------- */
@@ -815,8 +872,7 @@ async function addExternalDir(dir) {
 }
 async function start(items, append) {
   items.sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }));
-  const base = append ? state.items.length : 0;
-  items.forEach((it, i) => Object.assign(it, { id: base + i, status: "wait", selected: true, type: "", nachname: "", vorname: "", datum: "", manual: {} }));
+  items.forEach((it) => Object.assign(it, { status: "wait", selected: true, type: "", nachname: "", vorname: "", datum: "", manual: {} }));
   state.items = append ? state.items.concat(items) : items;
   render();
   if (!state.items.length) { setStatus("In diesem Ordner liegen keine PDF-, JPG- oder PNG-Dateien.", undefined, true); return; }
@@ -866,10 +922,20 @@ function analyse(it) {
   // Hinweis, wenn die gelesenen Seiten sicher zu verschiedenen Dokumenttypen gehören
   it.multiHint = false;
   if ((it.pageTexts || []).length > 1) {
-    const sureTypes = new Set(it.pageTexts.map((t) => classify(t)).filter((c) => c.sure).map((c) => c.type));
+    const sureTypes = new Set(surePageTypes(it).filter((c) => c.sure).map((c) => c.type));
     if (sureTypes.size > 1) it.multiHint = true;
   }
   it.status = "done";
+}
+/* Klassifikation je gelesener Seite, einmal berechnet und wiederverwendet
+   (analyse() läuft bei jedem Tastendruck in den Vorgabe-Feldern über alle Dateien) */
+function surePageTypes(it) {
+  const pts = it.pageTexts || [];
+  if (!it._pageCls) it._pageCls = { n: 0, list: [] };
+  const c = it._pageCls;
+  if (c.n > pts.length) { c.n = 0; c.list = []; }
+  while (c.n < pts.length) { c.list.push(classify(pts[c.n])); c.n++; }
+  return c.list;
 }
 function reanalyseAll() {
   for (const it of state.items) if (it.status === "done") { analyse(it); renderRow(it); }
@@ -898,21 +964,17 @@ async function backgroundScan() {
           const page = await doc.getPage(p);
           const tc = await page.getTextContent();
           let t = tc.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join("");
+          let rot = 0;
           if (t.replace(/\s/g, "").length < 40) {
-            const base = page.getViewport({ scale: 1 });
-            const scale = Math.max(1, Math.min(2.5, 2600 / Math.max(base.width, base.height)));
-            const vp = page.getViewport({ scale });
-            const canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
-            const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            const canvas = await renderPage(page, ocrScale(page));
             if (inkRatio(canvas) < 0.004) t = "";
-            else { const r = await (await ocr()).addJob("recognize", canvas); t = r.data.text; it.ocr = true; }
+            else { const r = await ocrSmart(canvas); t = r.text; rot = r.rot; it.ocr = true; }
           }
           page.cleanup();
-          it.pageTexts.push(t); it.pagesRead = p;
+          it.pageTexts.push(t); (it.pageRot || (it.pageRot = []))[p - 1] = rot; it.pagesRead = p;
           // Mehrtyp-Hinweis nachziehen (ohne eine Zeile zu stören, in der gerade getippt wird)
           if (!it.multiHint) {
-            const sure = new Set(it.pageTexts.map((x) => classify(x)).filter((c) => c.sure).map((c) => c.type));
+            const sure = new Set(surePageTypes(it).filter((c) => c.sure).map((c) => c.type));
             if (sure.size > 1) {
               it.multiHint = true;
               if (it.tr && !it.tr.contains(document.activeElement)) renderRow(it);
@@ -931,13 +993,22 @@ async function fileBytes(it) {
   const f = it.file || await it.handle.getFile();
   return new Uint8Array(await f.arrayBuffer());
 }
-let derivedCount = 0;
 function newItem(props) {
-  derivedCount++;
   return Object.assign({
-    id: "neu" + derivedCount, derived: true, status: "done", selected: true,
+    derived: true, status: "done", selected: true,
     type: "", nachname: "", vorname: "", datum: "", manual: {},
   }, props);
+}
+// Namen neu erstellter Dateien in der Liste eindeutig halten (z. B. zweimal „…_gesamt.pdf“)
+function uniqueListName(name) {
+  const dot = name.lastIndexOf("."), base = name.slice(0, dot), ext = name.slice(dot);
+  let n = name, i = 2;
+  while (state.items.some((s) => s.name === n)) n = `${base}_${i++}${ext}`;
+  return n;
+}
+// Seitendrehung in eine pdf-lib-Seite schreiben (zusätzlich zur schon vorhandenen Drehung)
+function turnPage(pg, rot) {
+  if (rot) pg.setRotation(PDFLib.degrees((((pg.getRotation().angle || 0) + rot) % 360 + 360) % 360));
 }
 
 const split = { item: null, pages: [], order: [], cuts: new Set(), bytes: null, doc: null, auto: true, abort: false, running: false, drag: undefined };
@@ -970,12 +1041,9 @@ async function openSplit(it) {
     for (let p = 1; p <= total; p++) {
       if (split.abort) break;
       const page = await doc.getPage(p);
-      const base = page.getViewport({ scale: 1 });
-      const tvp = page.getViewport({ scale: 440 / Math.max(base.width, base.height) });
-      const tc2 = document.createElement("canvas"); tc2.width = Math.round(tvp.width); tc2.height = Math.round(tvp.height);
-      const tctx = tc2.getContext("2d"); tctx.fillStyle = "#fff"; tctx.fillRect(0, 0, tc2.width, tc2.height);
-      await page.render({ canvasContext: tctx, viewport: tvp }).promise;
-      const rec = { thumb: tc2.toDataURL("image/jpeg", 0.75), ink: inkRatio(tc2), text: "", ocr: false, cls: null, leer: false, drop: false };
+      const known = (it.pageRot || [])[p - 1] || 0;     // schon erkannte Drehung gleich anwenden
+      const tc2 = await renderPage(page, fitScale(page, 440), known);
+      const rec = { thumb: tc2.toDataURL("image/jpeg", 0.75), thumbRot: known, rot: known, ink: inkRatio(tc2), text: "", ocr: false, cls: null, leer: false, drop: false };
       split.pages.push(rec);
       addSplitPage(p, rec);
       page.cleanup();
@@ -993,20 +1061,19 @@ async function openSplit(it) {
         continue;
       }
       const page = await doc.getPage(p);
-      const base = page.getViewport({ scale: 1 });
       const tcont = await page.getTextContent();
       let t = tcont.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join("");
       if (t.replace(/\s/g, "").length < 15 && rec.ink < 0.004) {
         rec.leer = true; rec.drop = true; t = "";
       } else if (t.replace(/\s/g, "").length < 40) {
-        const scale = Math.max(1, Math.min(2.5, 2600 / Math.max(base.width, base.height)));
-        const vp = page.getViewport({ scale });
-        const canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
-        const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        const canvas = await renderPage(page, ocrScale(page));
         if (split.abort) { page.cleanup(); break; }
-        const r = await (await ocr()).addJob("recognize", canvas);
-        t = r.data.text; rec.ocr = true;
+        const r = await ocrSmart(canvas);
+        t = r.text; rec.ocr = true;
+        if (r.rot) {                                   // verdrehte Seite: merken und gerade anzeigen
+          rec.rot = r.rot; (split.item.pageRot || (split.item.pageRot = []))[p - 1] = r.rot;
+          await setRotDisplay(rec, r.rot);
+        }
       }
       rec.text = t; rec.cls = classify(t);
       markSplitPage(p, rec);
@@ -1047,12 +1114,26 @@ function renderSplitCard(wrap, disp, orig, rec) {
   const skip = document.createElement("button"); skip.type = "button"; skip.className = "skippage"; skip.textContent = "weglassen";
   skip.title = "Diese Seite beim Teilen weglassen";
   skip.onclick = () => { rec.drop = !rec.drop; card.classList.toggle("drop", rec.drop); skip.textContent = rec.drop ? "behalten" : "weglassen"; updateSplitInfo(); };
-  card.append(img, no, ty, skip);
+  const rt = document.createElement("button"); rt.type = "button"; rt.className = "skippage rotpage"; rt.textContent = "drehen";
+  rt.title = "Diese Seite um 90 Grad drehen – die Drehung wird mitgespeichert";
+  rt.onclick = async () => {
+    rec.rot = ((rec.rot || 0) + 90) % 360;
+    (split.item.pageRot || (split.item.pageRot = []))[orig] = rec.rot;
+    await setRotDisplay(rec, rec.rot);
+    img.src = rec.thumb;
+    if (orig === 0) {                                               // Zeilen-Miniatur (Seite 1) mitdrehen
+      await setRotDisplay(split.item, rec.rot);
+      if (split.item.tr && !split.item.tr.contains(document.activeElement)) renderRow(split.item);
+    }
+  };
+  card.append(img, no, ty, skip, rt);
   wrap.appendChild(card);
   if (rec.cls || rec.leer) fillCardState(card, rec);
 }
 function fillCardState(card, rec) {
-  const ty = card.querySelector(".ptype"), skip = card.querySelector(".skippage");
+  const ty = card.querySelector(".ptype"), skip = card.querySelector(".skippage:not(.rotpage)");
+  const img = card.querySelector("img");
+  if (img.src !== rec.thumb) img.src = rec.thumb;
   if (rec.leer) { ty.textContent = "Leer"; ty.className = "ptype vage"; }
   else if (rec.cls && rec.cls.sure) { ty.textContent = rec.cls.type; ty.className = "ptype"; ty.style.setProperty("--h", hue(rec.cls.type)); }
   else if (rec.cls && rec.cls.type !== UNKNOWN) { ty.textContent = rec.cls.type + "?"; ty.className = "ptype vage"; }
@@ -1081,11 +1162,8 @@ async function zoomPage(p) {
   if (!split.doc) return;
   try {
     const page = await split.doc.getPage(p);
-    const base = page.getViewport({ scale: 1 });
-    const vp = page.getViewport({ scale: Math.min(3, 1600 / Math.max(base.width, base.height)) });
-    const canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
-    const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    const rec = split.pages[p - 1];
+    const canvas = await renderPage(page, fitScale(page, 1600), rec && rec.rot);
     page.cleanup();
     $("#zoomimg").src = canvas.toDataURL("image/jpeg", 0.85);
     $("#zoom").classList.remove("hidden");
@@ -1171,13 +1249,16 @@ async function doSplit() {
     const items = [];
     for (const [k, sg] of segs.entries()) {
       const out = await PDFLib.PDFDocument.create();
-      (await out.copyPages(src, sg.kept)).forEach((pg) => out.addPage(pg));
+      // Erkannte oder von Hand gesetzte Drehungen werden in die neue Datei geschrieben
+      (await out.copyPages(src, sg.kept)).forEach((pg, idx) => { turnPage(pg, split.pages[sg.kept[idx]].rot); out.addPage(pg); });
       const data = await out.save();
       const pageRecs = sg.kept.map((p) => split.pages[p]);
       const ni = newItem({
-        name: segs.length === 1 ? `${base}_${orderChanged ? "sortiert" : "bereinigt"}.pdf` : `${base}_Teil${k + 1}.pdf`,
+        name: uniqueListName(segs.length === 1 ? `${base}_${orderChanged ? "sortiert" : "bereinigt"}.pdf` : `${base}_Teil${k + 1}.pdf`),
         data, size: data.length,
-        pages: sg.kept.length, thumb: pageRecs[0].thumb,
+        pages: sg.kept.length, pagesRead: sg.kept.length,            // alle Seiten sind schon gelesen
+        pageRot: sg.kept.map(() => 0),                               // die neue Datei steht gerade
+        thumb: pageRecs[0].thumb,
         text: sg.text, pageTexts: pageRecs.map((r) => r.text), ocr: pageRecs.some((r) => r.ocr),
         partInfo: `${sg.kept.length === 1 ? "Seite " : "Seiten "}${pagesLabel(sg.kept)} aus „${origName}“`,
       });
@@ -1208,16 +1289,21 @@ async function mergeSelected() {
   try {
     const out = await PDFLib.PDFDocument.create();
     const names = []; let text = "", pagesN = 0, anyOcr = false, pageTexts = [];
+    // Seitentexte nur übernehmen, wenn JEDE Quelle vollständig gelesen ist – sonst würden
+    // die Texte gegen die Seitennummern verrutschen; das Hintergrund-Lesen füllt sie dann neu.
+    const allRead = sel.every((s) => (s.pagesRead || 0) >= (s.pages || 0));
     for (const it of sel) {
       const bytes = await fileBytes(it);
       const ext = it.name.split(".").pop().toLowerCase();
+      const rots = it.pageRot || [];
       if (ext === "pdf") {
         const src = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
-        (await out.copyPages(src, src.getPageIndices())).forEach((pg) => { out.addPage(pg); pagesN++; });
+        (await out.copyPages(src, src.getPageIndices())).forEach((pg, idx) => { turnPage(pg, rots[idx]); out.addPage(pg); pagesN++; });
       } else {
         const img = ext === "png" ? await out.embedPng(bytes) : await out.embedJpg(bytes);
         const pg = out.addPage([img.width, img.height]);
         pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+        turnPage(pg, rots[0]);
         pagesN++;
       }
       names.push(it.originalName || it.name);
@@ -1227,8 +1313,11 @@ async function mergeSelected() {
     }
     const data = await out.save();
     const ni = newItem({
-      name: names[0].replace(/\.[^.]+$/, "") + "_gesamt.pdf", data, size: data.length,
-      pages: pagesN, thumb: sel[0].thumb, text, pageTexts, ocr: anyOcr,
+      name: uniqueListName(names[0].replace(/\.[^.]+$/, "") + "_gesamt.pdf"), data, size: data.length,
+      pages: pagesN, thumb: sel[0].thumb, thumbRot: 0, text,
+      pageTexts: allRead ? pageTexts : [], pagesRead: allRead ? pageTexts.length : 0,
+      pageRot: Array(pagesN).fill(0),                 // Drehungen stecken schon in der Datei
+      ocr: anyOcr,
       partInfo: "Zusammengeführt aus " + names.map((n) => `„${n}“`).join(", "),
     });
     analyse(ni);
@@ -1241,7 +1330,7 @@ async function mergeSelected() {
     }
     const pos = state.items.indexOf(sel[sel.length - 1]);
     state.items.splice(pos + 1, 0, ni);
-    for (const it of sel) { it.selected = false; it.mergedInto = ni.name; }
+    for (const it of sel) { it.selected = false; it.mergedInto = ni.name; it.mergedIntoItem = ni; }
     state.busy = false;
     render();
     setStatus(`${sel.length} Dateien zu einer PDF-Datei zusammengeführt. Die Originale bleiben unverändert und sind abgewählt.`);
@@ -1254,7 +1343,7 @@ async function mergeSelected() {
 function discardDerived(it) {
   const pos = state.items.indexOf(it);
   if (pos >= 0) state.items.splice(pos, 1);
-  for (const s of state.items) if (s.mergedInto === it.name) delete s.mergedInto;
+  for (const s of state.items) if (s.mergedIntoItem === it) { delete s.mergedInto; delete s.mergedIntoItem; }
   render();
 }
 
@@ -1268,8 +1357,10 @@ async function copyText(t) {
   }
   setStatus("Der erkannte Text liegt in der Zwischenablage.");
 }
-const pv = { it: null, page: 1, doc: null, url: null };
+const pv = { it: null, page: 1, doc: null, url: null, seq: 0 };
 async function openPreview(it) {
+  closePreview();                         // ggf. noch offene/ladende Vorschau sauber beenden
+  const my = ++pv.seq;
   pv.it = it; pv.page = 1;
   $("#pvtitle").textContent = it.originalName || it.name;
   $("#preview").classList.remove("hidden");
@@ -1277,35 +1368,42 @@ async function openPreview(it) {
   try {
     if (/\.pdf$/i.test(it.name)) {
       const pdfjs = await pdfLib();
-      pv.doc = await pdfjs.getDocument({ data: (await fileBytes(it)).slice(), isEvalSupported: false }).promise;
+      const doc = await pdfjs.getDocument({ data: (await fileBytes(it)).slice(), isEvalSupported: false }).promise;
+      if (pv.seq !== my) { doc.destroy(); return; }   // inzwischen geschlossen oder neu geöffnet
+      pv.doc = doc;
     } else {
       pv.doc = null;
-      pv.url = URL.createObjectURL(it.file);
+      const f = it.file || await (it.handle && it.handle.getFile());
+      if (pv.seq !== my) return;
+      pv.url = URL.createObjectURL(it.data ? new Blob([it.data]) : f);
     }
     await pvRender();
-  } catch (e) { console.error(e); $("#pvpage").textContent = "Vorschau nicht möglich"; }
+  } catch (e) { console.error(e); if (pv.seq === my) $("#pvpage").textContent = "Vorschau nicht möglich"; }
 }
 async function pvRender() {
   if (!pv.it) return;
-  if (pv.doc) {
-    const page = await pv.doc.getPage(pv.page);
-    const base = page.getViewport({ scale: 1 });
-    const vp = page.getViewport({ scale: Math.min(3, 1500 / Math.max(base.width, base.height)) });
-    const canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
-    const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  const my = pv.seq, doc = pv.doc;
+  const rot = (pv.it.pageRot || [])[doc ? pv.page - 1 : 0] || 0;
+  if (doc) {
+    const page = await doc.getPage(pv.page);
+    const canvas = await renderPage(page, fitScale(page, 1500), rot);
     page.cleanup();
+    if (pv.seq !== my) return;              // Vorschau wurde währenddessen geschlossen
     $("#pvimg").src = canvas.toDataURL("image/jpeg", 0.85);
-    $("#pvpage").textContent = `Seite ${pv.page} von ${pv.doc.numPages}`;
+    $("#pvpage").textContent = `Seite ${pv.page} von ${doc.numPages}`;
     $("#pvprev").disabled = pv.page <= 1;
-    $("#pvnext").disabled = pv.page >= pv.doc.numPages;
+    $("#pvnext").disabled = pv.page >= doc.numPages;
   } else {
-    $("#pvimg").src = pv.url;
+    let src = pv.url;
+    if (rot) { try { src = rotateCanvas(await urlToCanvas(pv.url), rot).toDataURL("image/jpeg", 0.9); } catch {} }
+    if (pv.seq !== my) return;
+    $("#pvimg").src = src;
     $("#pvpage").textContent = "";
     $("#pvprev").disabled = true; $("#pvnext").disabled = true;
   }
 }
 function closePreview() {
+  pv.seq++;
   $("#preview").classList.add("hidden");
   if (pv.doc) { pv.doc.destroy(); pv.doc = null; }
   if (pv.url) { URL.revokeObjectURL(pv.url); pv.url = null; }
@@ -1454,6 +1552,26 @@ function uniqueName(name, taken) {
   for (let i = 2; ; i++) { const n = `${base}_${i}${ext}`; if (!taken.has(n.toLowerCase())) { taken.add(n.toLowerCase()); return n; } }
 }
 function csvLine(cols) { return cols.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";"); }
+/* Erkannte oder von Hand gesetzte Drehungen beim Speichern in die KOPIE schreiben.
+   Das Original bleibt wie immer unberührt; schlägt das Drehen fehl, wird unverändert kopiert.
+   Gibt null zurück, wenn nichts zu drehen ist. */
+async function outputData(it) {
+  const rots = it.pageRot || [];
+  if (!rots.some((r) => r)) return null;
+  try {
+    const bytes = await fileBytes(it);
+    if (/\.pdf$/i.test(it.name)) {
+      const doc = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+      doc.getPages().forEach((pg, i) => turnPage(pg, rots[i]));
+      return await doc.save();
+    }
+    const bmp = await createImageBitmap(new Blob([bytes]));
+    const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+    c.getContext("2d").drawImage(bmp, 0, 0);
+    const url = rotateCanvas(c, rots[0]).toDataURL(/\.png$/i.test(it.name) ? "image/png" : "image/jpeg", 0.92);
+    return b64ToBytes(url.split(",")[1]);
+  } catch (e) { console.error(e); return null; }
+}
 function stamp() { const d = new Date(), p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}`; }
 
 async function apply() {
@@ -1481,8 +1599,7 @@ async function applyFolder(sel, log, now) {
   }
   // Fester Standard: Kopien nach umbenannt/<Person>/, Originale nach verarbeitet/
   const baseTarget = await state.dir.getDirectoryHandle("umbenannt", { create: true });
-  const perPerson = true;
-  // je Zielordner (Hauptordner oder Personen-Unterordner) eigene Liste vergebener Namen
+  // je Zielordner (Personen-Unterordner oder verarbeitet/) eigene Liste vergebener Namen
   const folders = new Map();
   async function folderFor(key, dirHandle) {
     if (!folders.has(key)) {
@@ -1492,27 +1609,24 @@ async function applyFolder(sel, log, now) {
     }
     return folders.get(key);
   }
-  const root = await folderFor("", baseTarget);
   let ok = 0, fail = 0;
   for (const [i, it] of sel.entries()) {
     setStatus(`Speichere ${i + 1} von ${sel.length} …`, i / sel.length);
     const oldName = it.name;
     try {
-      let f = root, sub = "";
-      if (perPerson) {
-        sub = (clean(it.nachname) || "Unbekannt") + (clean(it.vorname) ? "_" + clean(it.vorname) : "");
-        f = await folderFor(sub, await baseTarget.getDirectoryHandle(sub, { create: true }));
-      }
+      const sub = (clean(it.nachname) || "Unbekannt") + (clean(it.vorname) ? "_" + clean(it.vorname) : "");
+      const f = await folderFor(sub, await baseTarget.getDirectoryHandle(sub, { create: true }));
       const newName = uniqueName(buildName(it), f.taken);
+      const turned = await outputData(it);   // Drehungen in die Kopie schreiben
       if (it.data || !it.handle) {
         // Neu erstellte (Teilen/Zusammenführen) oder von außerhalb zugezogene Datei:
         // in den Stammordner schreiben; ein fremdes Original wird nie angefasst
         const fh = await f.dir.getFileHandle(newName, { create: true });
-        const w = await fh.createWritable(); await w.write(it.data ? it.data : await it.file.arrayBuffer()); await w.close();
+        const w = await fh.createWritable(); await w.write(turned || (it.data ? it.data : await it.file.arrayBuffer())); await w.close();
         it.appliedText = it.data ? "Neu erstellt" : "In den Ordner übernommen";
       } else {
         const fh = await f.dir.getFileHandle(newName, { create: true });
-        const w = await fh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
+        const w = await fh.createWritable(); await w.write(turned || await it.handle.getFile()); await w.close();
         // Original in den Unterordner „verarbeitet“ verschieben: Der Scan-Ordner zeigt so immer nur
         // die offene Arbeit – auch nach einem Neustart wird nichts doppelt eingelesen.
         let verschoben = false;
@@ -1535,10 +1649,11 @@ async function applyFolder(sel, log, now) {
         } catch (e) { console.error(e); }
         it.appliedText = verschoben ? "Kopie gespeichert, Original → verarbeitet" : "Kopie gespeichert";
       }
-      const rel = (sub ? sub + "/" : "") + newName;
+      const rel = sub + "/" + newName;
       it.originalName = oldName; it.name = newName; it.status = "applied"; ok++;
       state.done.add(oldName.toLowerCase()); state.done.add(newName.toLowerCase());
-      log.push(csvLine([now, oldName, rel, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, it.partInfo || ""]));
+      const hint = (it.partInfo || "") + (turned ? (it.partInfo ? " · " : "") + "gerade gedreht gespeichert" : "");
+      log.push(csvLine([now, oldName, rel, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, hint]));
     } catch (e) {
       console.error(e); it.status = "failed"; it.error = "Speichern fehlgeschlagen"; fail++;
     }
@@ -1575,16 +1690,18 @@ function makeZip(files) {
   return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: "application/zip" });
 }
 async function applyZip(sel, log, now) {
-  const perPerson = true;   // je Person ein Unterordner – fester Standard
   const taken = new Map(), files = [];
   const takenFor = (k) => { if (!taken.has(k)) taken.set(k, new Set()); return taken.get(k); };
   for (const it of sel) {
-    const sub = perPerson ? (clean(it.nachname) || "Unbekannt") + (clean(it.vorname) ? "_" + clean(it.vorname) : "") : "";
+    // je Person ein Unterordner – fester Standard, auch als Pfade in der ZIP
+    const sub = (clean(it.nachname) || "Unbekannt") + (clean(it.vorname) ? "_" + clean(it.vorname) : "");
     const newName = uniqueName(buildName(it), takenFor(sub));
-    const rel = (sub ? sub + "/" : "") + newName;
-    files.push({ name: rel, data: it.data || new Uint8Array(await it.file.arrayBuffer()) });
-    log.push(csvLine([now, it.name, rel, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, it.partInfo || ""]));
-    it.originalName = it.name; it.name = newName; it.status = "applied"; it.appliedText = sub ? "In ZIP-Datei → " + sub : "In ZIP-Datei"; renderRow(it);
+    const rel = sub + "/" + newName;
+    const turned = await outputData(it);   // Drehungen in die Kopie schreiben
+    files.push({ name: rel, data: turned || it.data || new Uint8Array(await it.file.arrayBuffer()) });
+    const hint = (it.partInfo || "") + (turned ? (it.partInfo ? " · " : "") + "gerade gedreht gespeichert" : "");
+    log.push(csvLine([now, it.name, rel, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, hint]));
+    it.originalName = it.name; it.name = newName; it.status = "applied"; it.appliedText = "In ZIP-Datei → " + sub; renderRow(it);
   }
   files.push({ name: `Protokoll_${stamp()}.csv`, data: new TextEncoder().encode("\ufeff" + log.join("\r\n") + "\r\n") });
   const a = document.createElement("a"); a.href = URL.createObjectURL(makeZip(files)); a.download = `Unterlagen_umbenannt_${stamp()}.zip`;
@@ -1641,7 +1758,11 @@ function init() {
   $("#merge").onclick = mergeSelected;
   $("#splitok").onclick = doSplit;
   $("#splitcancel").onclick = closeSplit;
-  $("#splitdlg").addEventListener("cancel", () => { split.abort = true; });
+  $("#splitdlg").addEventListener("cancel", (e) => {
+    // Esc schließt zuerst nur die Vergrößerung, erst der zweite Esc den Dialog
+    if (!$("#zoom").classList.contains("hidden")) { e.preventDefault(); $("#zoom").classList.add("hidden"); return; }
+    split.abort = true;
+  });
   $("#splitdlg").addEventListener("close", () => {
     split.abort = true; $("#zoom").classList.add("hidden");
     if (split.doc) { split.doc.destroy(); split.doc = null; }
@@ -1653,10 +1774,24 @@ function init() {
   $("#pvprev").onclick = () => { if (pv.doc && pv.page > 1) { pv.page--; pvRender(); } };
   $("#pvnext").onclick = () => { if (pv.doc && pv.page < pv.doc.numPages) { pv.page++; pvRender(); } };
   $("#pvcopy").onclick = () => pv.it && copyText(pv.it.text);
+  $("#pvrot").onclick = async () => {
+    if (!pv.it) return;
+    const i = pv.doc ? pv.page - 1 : 0;
+    const pr = pv.it.pageRot || (pv.it.pageRot = []);
+    pr[i] = ((pr[i] || 0) + 90) % 360;
+    if (i === 0) {                                     // Zeilen-Miniatur (Seite 1) mitdrehen
+      await setRotDisplay(pv.it, pr[0]);
+      if (pv.it.tr && !pv.it.tr.contains(document.activeElement)) renderRow(pv.it);
+    }
+    pvRender();
+  };
+  let extUrl = null;   // nur die letzte Blob-URL behalten, alte wieder freigeben
   $("#pvext").onclick = async () => {
     if (!pv.it) return;
     const f = pv.it.data ? new Blob([pv.it.data], { type: "application/pdf" }) : (pv.it.file || await pv.it.handle.getFile());
-    window.open(URL.createObjectURL(f), "_blank");
+    if (extUrl) URL.revokeObjectURL(extUrl);
+    extUrl = URL.createObjectURL(f);
+    window.open(extUrl, "_blank");
   };
   addEventListener("keydown", (e) => { if (e.key === "Escape" && pv.it) closePreview(); });
 }

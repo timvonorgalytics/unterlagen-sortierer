@@ -53,7 +53,20 @@ VERSION            Versionsnummer für das Release-ZIP
 
 - **Seiten-Lesen (automatische Regel, KEINE Einstellung):** `readText()` liest im ersten Durchgang
   höchstens 2 Seiten per OCR (Textseiten digitaler PDFs kosten fast nichts → alle, Kappe 40; leere
-  Seiten per `inkRatio < 0.004` erkannt, kosten kein Budget, Text ""). `item.pagesRead` zählt mit.
+  Seiten per `inkRatio < 0.004` erkannt, kosten kein Budget, Text ""). `item.pagesRead` zählt mit –
+  auch beim Teilen/Zusammenführen erzeugte Dateien setzen es, sonst liest `backgroundScan()` sie
+  unnötig noch einmal. Seiten rendert überall `renderPage(page, scale, rot)` (Maßstäbe: `ocrScale`
+  ≈2600 px, `fitScale` für Anzeige) – kein Copy-&-Paste von Canvas-Code.
+- **Dreh-Erkennung (`ocrSmart`):** Jede OCR läuft über `ocrSmart(canvas)`. Güte = Tesseract-Konfidenz
+  × Anteil echter Wörter (`Konfidenz × min(1, Wörter/8)`; Tesseract gibt seitwärts gelesenem Müll
+  sonst noch ~45). Unter 50 wird die Seite um 90/270/180 gedreht erneut gelesen und die beste
+  Richtung übernommen. Ergebnis in `item.pageRot[]` (Grad im Uhrzeigersinn, die die Seite gerade
+  stellen); `item.thumb`/`rec.thumb` sind bereits gedreht (`thumbRot` merkt sich, wie weit –
+  `setRotDisplay()` dreht nach). Von Hand: „Seite drehen“ in der Vorschau, „drehen“ je Seite im
+  Teilen-Dialog. Beim Speichern schreibt `outputData(it)` die Drehung in die KOPIE (pdf-lib
+  `setRotation` bzw. Foto-Pixel neu kodiert; Fehlschlag → unveränderte Kopie); `doSplit`/
+  `mergeSelected` drehen über `turnPage()` direkt beim Erzeugen, die neuen Dateien gelten als
+  gerade (`pageRot` = 0). Das Original bleibt IMMER unangetastet.
   Danach liest `backgroundScan()` die restlichen Seiten mehrseitiger PDFs leise nach (pausiert bei
   `state.busy` und offenem Teilen-Dialog, bricht ab, wenn die Zeile verschwindet): Es füllt NUR
   `pageTexts`/`multiHint` – Typ/Name angezeigter Zeilen werden NIE nachträglich geändert, und eine
@@ -86,7 +99,11 @@ VERSION            Versionsnummer für das Release-ZIP
   `doSplit()` erzeugt per **pdf-lib** je Abschnitt eine neue PDF in Anzeige-Reihenfolge
   (`copyPages` mit beliebiger Index-Folge); 1 Abschnitt + umsortiert/bereinigt → „Sortiert
   speichern“/eine Datei (`_sortiert`/`_bereinigt`). Original bleibt unverändert, wird abgewählt.
-  `analyse()`/`backgroundScan()` setzen `item.multiHint` → gelber Hinweis in der Typ-Spalte.
+  `analyse()`/`backgroundScan()` setzen `item.multiHint` → gelber Hinweis in der Typ-Spalte
+  (Seiten-Klassifikationen cached `surePageTypes()`, denn `reanalyseAll()` feuert je Tastendruck).
+  Die Zoom-Ansicht `#zoom` liegt IM `<dialog>` – ein Element außerhalb kann den modalen Top-Layer
+  nie überdecken (so war der Zoom unsichtbar); Esc schließt erst den Zoom, dann den Dialog
+  (`cancel`-Handler mit `preventDefault`).
 - **Vorschau + Text kopieren:** Klick aufs Thumbnail → Overlay `#preview` im selben Fenster
   (`openPreview`, blätterbar, Esc/Klick daneben schließt; „In neuem Fenster öffnen“ als Extra).
   `copyText()` (Clipboard-API mit execCommand-Fallback) liegt in der Vorschau und an „Erkannten
@@ -153,10 +170,10 @@ VERSION            Versionsnummer für das Release-ZIP
 ## Testen
 
 ```bash
-python3 -m pip install playwright pillow reportlab   # einmalig; unter Python 3.9: "reportlab<4.4"
-python3 -m playwright install chromium                # einmalig
-bash tests/alle_tests.sh                               # alle Tests (ca. 1–2 Minuten)
-python3 tests/test_dateimodus.py                       # einzelner Test
+python3 -m pip install playwright pillow reportlab pypdf   # einmalig; unter Python 3.9: "reportlab<4.4"
+python3 -m playwright install chromium                      # einmalig
+bash tests/alle_tests.sh                                     # alle Tests (ca. 2–3 Minuten)
+python3 tests/test_dateimodus.py                             # einzelner Test
 ```
 
 | Test | Prüft |
@@ -165,6 +182,7 @@ python3 tests/test_dateimodus.py                       # einzelner Test
 | test_namen.py | findName direkt auf Textproben (zwei Vornamen, Formular-Tabellen, beschriftete Felder, Absender, Anrede) |
 | test_regeln.py | classify auf Textproben (neue Praxis-Typen + Regressionen), Drag & Drop, Filter, Regeln-Dialog |
 | test_teilen.py | Stapel-Scan: Mehrtyp-Hinweis, Trennvorschlag, leere Seite erkannt/weggelassen, Trennstelle von Hand, Teilen, ZIP + Protokoll-Hinweis; Zusammenführen PDF+JPG, Verwerfen |
+| test_drehen.py | Verdrehter Scan (tests/testdocs/extra/) wird erkannt + gerade gespeichert (pypdf prüft /Rotate), „Seite drehen“ von Hand, Vorschau im Ordnermodus, Zoom liegt ÜBER dem Dialog, pagesRead/pageTexts neu erzeugter Dateien |
 | test_mehrkunden.py | Unterordner je Person (Ordner + ZIP), „Neue Dateien einlesen“, Stammordner (zugezogene Dateien ergänzen + landen im Ordner) |
 | test_ordnermodus.py | Standard-Ablage: umbenannt/<Person>/, Originale nach verarbeitet/, Ersatzweg ohne move(), keine Überschreibung, Fremddateien, Neustart liest nichts doppelt |
 | test_offline.py | läuft ohne Netz, null Netzanfragen |

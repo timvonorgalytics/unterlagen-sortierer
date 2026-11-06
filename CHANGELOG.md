@@ -4,8 +4,41 @@ Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
 ## 1.2.0 – 2026-11-06
 
-Neues, schlichtes Erscheinungsbild im Orgalytics-Stil (www.orgalytics.de als
-Anker) – an der Bedienung ändert sich nichts:
+Erste MVP-Version: neues Erscheinungsbild, automatische Dreh-Erkennung und
+die Ergebnisse eines vollständigen Qualitätschecks.
+
+### Verdrehte Scans werden erkannt und gerade gespeichert
+
+- Seiten, die quer oder kopfüber eingescannt wurden, erkennt die
+  Texterkennung jetzt von selbst: Sie liest die Seite in der richtigen
+  Richtung, Dokumenttyp und Name stimmen wieder, und Miniatur, Vorschau
+  und Teilen-Dialog zeigen die Seite gerade.
+- „Seite drehen“ in der Vorschau und „drehen“ an jeder Seite im
+  Teilen-Dialog drehen von Hand nach.
+- Beim Speichern wird die Drehung in die Kopie (bzw. die geteilte oder
+  zusammengeführte Datei) geschrieben – in der eAkte liegt ein gerades
+  Dokument. Das Original bleibt wie immer unverändert; das Protokoll
+  vermerkt „gerade gedreht gespeichert“.
+
+### Behoben (aus dem Qualitätscheck)
+
+- Die Bildvorschau (JPG/PNG) funktionierte im Ordnermodus nicht
+  („Vorschau nicht möglich“).
+- Die vergrößerte Seitenansicht im Teilen-Dialog lag HINTER dem Dialog
+  und war kaum zu sehen; Esc schließt jetzt erst die Vergrößerung, dann
+  den Dialog.
+- Beim Teilen/Zusammenführen erzeugte Dateien wurden im Hintergrund
+  unnötig komplett neu gelesen (doppelte Texterkennung).
+- Nach dem Zusammenführen teilweise gelesener Stapel konnten Seitentexte
+  im Teilen-Dialog zur falschen Seite angezeigt werden.
+- Schnelles Öffnen/Schließen der Vorschau konnte Fehler im Hintergrund
+  auslösen; außerdem kleinere Speicher-Aufräumarbeiten und
+  Code-Vereinfachungen (gemeinsamer Seiten-Renderer, tote Reste entfernt).
+
+### Neues, schlichtes Erscheinungsbild
+
+Im Orgalytics-Stil (www.orgalytics.de als Anker) – an der Bedienung
+ändert sich nichts:
 
 - Weiße Flächen mit feinen Trennlinien statt grauer Kästen; klare, ruhige
   Typografie (Geist); abgerundete Ecken und Schatten stark reduziert.
@@ -16,8 +49,10 @@ Anker) – an der Bedienung ändert sich nichts:
 - Dunkler Modus entsprechend überarbeitet.
 - Alle Farben kommen weiterhin aus `programm/marke.js` – für andere
   Kunden-Designs genügt es, diese Datei zu tauschen.
-- Entfernt: „Personenliste laden“ (CSV). Die Funktion wurde in der Praxis
-  nicht gebraucht; die Namenserkennung aus dem Dokument selbst bleibt
+### Entfernt
+
+- „Personenliste laden“ (CSV). Die Funktion wurde in der Praxis nicht
+  gebraucht; die Namenserkennung aus dem Dokument selbst bleibt
   unverändert.
 
 ## 1.1.0 – 2026-11-06

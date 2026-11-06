@@ -46,6 +46,11 @@ SO GEHT'S
      einen DSGVO-konformen KI-Assistenten), "In neuem Fenster öffnen"
      zeigt die Originaldatei. Der Kopier-Knopf steht auch unter
      "Erkannten Text anzeigen" in jeder Zeile.
+     Verdreht eingescannte Seiten (Blatt quer oder kopfüber im
+     Scanner) erkennt das Programm von selbst, liest sie richtig
+     herum und zeigt sie gerade an. Falls nötig dreht "Seite drehen"
+     in der Vorschau von Hand nach - gespeichert wird die Kopie
+     immer gerade gedreht, das Original bleibt unverändert.
      Zeilen ohne Haken werden nicht gespeichert.
      Bei vielen Dateien hilft unten "Nur zu prüfende anzeigen".
 
@@ -77,7 +82,8 @@ LAUFENDER BETRIEB UND E-MAIL-ANHÄNGE
 STAPEL-SCANS SORTIEREN UND TEILEN
   Jede mehrseitige PDF hat den Knopf "Sortieren und teilen ...".
   Ein Klick öffnet alle Seiten als Vorschau; ein Klick auf eine
-  Seite vergrößert sie. Die Seiten lassen sich mit der Maus in
+  Seite vergrößert sie, "drehen" dreht sie um 90 Grad (wird beim
+  Teilen mitgespeichert). Die Seiten lassen sich mit der Maus in
   eine neue Reihenfolge ziehen. Das Programm schlägt Trennstellen
   vor; ein Klick zwischen zwei Seiten setzt oder entfernt eine
   Trennstelle. Leere Rückseiten (Duplex-Scan) werden erkannt und
