@@ -24,7 +24,6 @@ async def fresh(pg, nomove=False):
       for (const n of docs) { const b = await (await fetch('/tests/testdocs/' + n)).blob(); const w = await (await d.getFileHandle(n, {create:true})).createWritable(); await w.write(b); await w.close(); }
       const w = await (await d.getFileHandle('notizen.txt', {create:true})).createWritable(); await w.write('x'); await w.close(); }""", NAMES)
     if nomove: await pg.evaluate("FileSystemFileHandle.prototype.move = undefined")
-    await pg.fill("#vNach", "Mustermann"); await pg.fill("#vVor", "Erika")
     await pg.click("#pick")
     await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
 

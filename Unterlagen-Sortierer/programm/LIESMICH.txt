@@ -32,8 +32,10 @@ SO GEHT'S
   2. Das Programm liest die Dateien und erkennt je Dokument den Typ
      und den Namen - auch wenn Unterlagen mehrerer Personen gemischt
      im Ordner liegen.
-     Das Namensfeld oben greift nur bei Dateien, in denen KEIN Name
-     erkannt wird; erkannte Namen werden nie überschrieben.
+     Gehören alle Scans zur selben Person: Namen oben eintragen und
+     auf "In markierte Zeilen eintragen" klicken - erst der Klick
+     übernimmt ihn in die angekreuzten Zeilen, beim Tippen passiert
+     nichts. Schon vorhandene Namen werden nur nach Rückfrage geändert.
 
   3. Liste prüfen:
        Grün  "Sicher"        -> Vorschlag ist eindeutig
@@ -41,9 +43,11 @@ SO GEHT'S
        Rot   "Name fehlt"    -> Name von Hand eintragen
      Dokumenttyp und Name lassen sich in jeder Zeile ändern.
      Ein Klick auf das kleine Vorschaubild öffnet eine Vorschau im
-     selben Fenster: blättern mit den Pfeilen, "Text kopieren" legt
-     den erkannten Text in die Zwischenablage (z. B. zum Einfügen in
-     einen DSGVO-konformen KI-Assistenten), "In neuem Fenster öffnen"
+     selben Fenster: Pfeiltasten links/rechts blättern die Seiten,
+     hoch/runter springen zum vorherigen bzw. nächsten Dokument.
+     "Text kopieren" legt den erkannten Text in die Zwischenablage
+     (z. B. zum Einfügen in einen DSGVO-konformen KI-Assistenten)
+     und bestätigt kurz mit "Kopiert"; "In neuem Fenster öffnen"
      zeigt die Originaldatei. Der Kopier-Knopf steht auch unter
      "Erkannten Text anzeigen" in jeder Zeile.
      Verdreht eingescannte Seiten (Blatt quer oder kopfüber im
@@ -108,8 +112,24 @@ DATEIEN ZUSAMMENFÜHREN
 
 DATEINAME ANPASSEN
   Im Feld "Neuer Dateiname" können Sie die Bausteine frei kombinieren:
-  {Nachname} {Vorname} {Dokumenttyp} {Datum} {Original}
+  {Nachname} {Vorname} {Dokumenttyp} {Datum} {Eingang} {Original}
+  {Datum} ist das erste im Dokument gefundene Datum, {Eingang} das
+  oben eingestellte Eingangsdatum (vorbelegt mit heute).
   Die Einstellung bleibt für das nächste Mal erhalten.
+
+EINGANGSDATUM UND EINGANGSSTEMPEL
+  Das Feld "Eingang" ist mit dem heutigen Datum vorbelegt und lässt
+  sich ändern (z. B. beim Nacharbeiten eines älteren Stapels).
+  Mit dem Haken "Eingangsstempel auf die Kopien" setzt das Programm
+  "Eingang: TT.MM.JJJJ" in Rot oben rechts auf die erste Seite jeder
+  gespeicherten Kopie - wie ein klassischer Eingangsstempel, auch auf
+  Fotos und richtig gelegen auf gedrehten Seiten. Die Originale
+  bleiben unverändert; das Protokoll vermerkt den Stempel.
+
+HELLE ODER DUNKLE ANSICHT
+  Das Programm startet passend zur Einstellung des Rechners. Der
+  Knopf oben rechts ("Dunkle Ansicht" / "Helle Ansicht") stellt um;
+  die Wahl bleibt für das nächste Mal erhalten.
 
 ERKENNUNGSREGELN ANSEHEN
   Der Knopf "Erkennungsregeln" oben rechts zeigt, an welchen

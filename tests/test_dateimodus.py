@@ -29,15 +29,29 @@ async def main():
         for r in await run(pg):
             P.check(f"Typ {r['d']}", r['t'] == TYP[r['d']], f"→ {r['t']}")
             P.check(f"Name {r['d']}", r['n'] == PERS[r['d']], f"→ '{r['n']}' ({r['src']})")
-        # B) Vorgabe ist nur Lückenfüller: greift bei Scan_0008 (kein Name), überschreibt sonst nichts
-        rows = await run(pg, "document.querySelector('#vNach').value='Mustermann';document.querySelector('#vVor').value='Erika'")
-        r8 = next(r for r in rows if r['d'] == "Scan_0008.pdf")
-        P.check("Vorgabe füllt Unbekannte", r8['n'] == "Mustermann Erika" and r8['src'] == "Vorgabe", r8)
-        for r in rows:
-            if r['d'] == "Scan_0008.pdf": continue
-            P.check(f"Vorgabe überschreibt nicht {r['d']}", r['n'] == PERS[r['d']] and r['src'] != "Vorgabe", f"{r['n']} ({r['src']})")
-        P.check("Dateiname Antrag", any(r['neu'] == "Mustermann_Erika_Antrag.pdf" for r in rows))
-        # C) manuelle Korrektur + ZIP
+        P.check("Dateiname Antrag", any(r['neu'] == "Mustermann_Erika_Antrag.pdf" for r in await pg.evaluate(
+            "state.items.map(i=>({neu:buildName(i)}))")))
+        # B) Namensfeld oben wirkt erst per Knopf und nur auf markierte Zeilen
+        await pg.fill("#vNach", "Beispiel"); await pg.fill("#vVor", "Bea")
+        P.check("Tippen allein ändert keine Zeile", await pg.evaluate("!state.items.some(i => i.nachname === 'Beispiel')"))
+        await pg.evaluate("state.items.forEach(i => { i.selected = /0008/.test(i.name); renderRow(i); }); updateActions()")
+        await pg.click("#vApply")
+        P.check("Knopf trägt Name in markierte Zeile ein", await pg.evaluate(
+            "state.items.find(i => /0008/.test(i.name)).nachname === 'Beispiel'"))
+        P.check("Unmarkierte Zeilen bleiben unverändert", await pg.evaluate(
+            "state.items.filter(i => i.nachname === 'Beispiel').length") == 1)
+        # Überschreiben erst nach Rückfrage – hier wird sie abgelehnt
+        await pg.evaluate("state.items.forEach(i => { i.selected = true; renderRow(i); }); updateActions()")
+        dialogs = []
+        lehne_ab = lambda d: (dialogs.append(d.message), asyncio.ensure_future(d.dismiss()))
+        pg.on("dialog", lehne_ab)
+        await pg.click("#vApply"); await pg.wait_for_timeout(200)
+        pg.remove_listener("dialog", lehne_ab)
+        P.check("Rückfrage vor dem Überschreiben", len(dialogs) == 1 and "schon einen Namen" in dialogs[0], dialogs)
+        P.check("Abbrechen lässt Namen stehen", await pg.evaluate(
+            "state.items.filter(i => i.nachname === 'Beispiel').length") == 1)
+        # C) manuelle Korrektur + ZIP (frischer Lauf ohne Namensfeld)
+        rows = await run(pg)
         await pg.fill("tbody tr:nth-child(10) input.name >> nth=0", "Mustermann")
         await pg.fill("tbody tr:nth-child(10) input.name >> nth=1", "Erika")
         await pg.select_option("tbody tr:nth-child(10) select", "Kontoauszug")

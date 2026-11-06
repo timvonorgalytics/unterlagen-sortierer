@@ -35,8 +35,9 @@
   --focus: var(--brand);
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
+/* Dunkle Ansicht: folgt der Systemeinstellung, der Knopf oben rechts stellt um
+   (JS setzt data-theme; so bleibt die Wahl auch gegen die Systemeinstellung bestehen) */
+:root[data-theme="dark"] {
     --paper: var(--brand-ink);
     --sheet: #161616;
     --raised: #1e1e1e;
@@ -56,7 +57,6 @@
     --miss-bg: #3a1a18;
     --focus: color-mix(in srgb, var(--brand) 62%, white);
     color-scheme: dark;
-  }
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -108,10 +108,10 @@ button, input, select { font: inherit; color: inherit; }
 .btn.primary:disabled:hover { background: var(--action); border-color: var(--action); }
 .btn.big { padding: 11px 22px; font-size: 15.5px; }
 .field { display: flex; gap: 8px; flex-wrap: wrap; }
-.field input[type=text], .field select {
+.field input[type=text], .field input[type=date], .field select {
   border: 1px solid var(--line); background: var(--sheet); border-radius: 3px; padding: 7px 10px; min-width: 0;
 }
-.field input[type=text]:hover, .field select:hover { border-color: var(--muted); }
+.field input[type=text]:hover, .field input[type=date]:hover, .field select:hover { border-color: var(--muted); }
 .field input[type=text] { flex: 1 1 120px; }
 .hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -169,9 +169,7 @@ td.thumb { width: 64px; }
   border-left: 3px solid hsl(var(--h) 45% 46%);
   border-radius: 0 3px 3px 0; padding: 0 4px 0 0; max-width: 220px;
 }
-@media (prefers-color-scheme: dark) {
-  .tab { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); border-left-color: hsl(var(--h) 45% 60%); }
-}
+:root[data-theme="dark"] .tab { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); border-left-color: hsl(var(--h) 45% 60%); }
 .tab select {
   appearance: none; -webkit-appearance: none; border: 0; background: transparent; font-weight: 600; font-size: 14px;
   padding: 5px 22px 5px 9px; cursor: pointer; max-width: 100%;
@@ -226,6 +224,7 @@ body.drag .tablewrap { outline: 2px dashed var(--accent); outline-offset: -2px; 
 
 /* Kleine Knöpfe in der Tabelle (Teilen, Verwerfen) */
 .btn.mini { font-size: 12.5px; padding: 3px 9px; margin-top: 6px; border-radius: 2px; }
+.btn.copied { color: var(--ok); border-color: var(--ok); }
 .why.warn { color: var(--check); font-weight: 600; }
 
 /* Teilen-Dialog */
@@ -258,10 +257,8 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   background: hsl(var(--h) 45% 94%); color: hsl(var(--h) 45% 24%);
 }
 .ptype.vage { background: var(--raised); color: var(--muted); font-weight: 500; }
-@media (prefers-color-scheme: dark) {
-  .ptype { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); }
-  .ptype.vage { background: var(--raised); color: var(--muted); }
-}
+:root[data-theme="dark"] .ptype { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); }
+:root[data-theme="dark"] .ptype.vage { background: var(--raised); color: var(--muted); }
 /* Regeln-Ansicht */
 .rule { padding: 10px 0; border-bottom: 1px solid var(--line); }
 .rule:last-child { border-bottom: 0; }
@@ -269,9 +266,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   display: inline-block; font-weight: 600; font-size: 14px; border-left: 3px solid hsl(var(--h) 45% 46%);
   background: hsl(var(--h) 45% 94%); color: hsl(var(--h) 45% 24%); border-radius: 0 3px 3px 0; padding: 3px 10px 3px 8px; margin-bottom: 7px;
 }
-@media (prefers-color-scheme: dark) {
-  .rule .tabname { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); border-left-color: hsl(var(--h) 45% 60%); }
-}
+:root[data-theme="dark"] .rule .tabname { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); border-left-color: hsl(var(--h) 45% 60%); }
 .rule .kws { display: flex; flex-wrap: wrap; gap: 5px; }
 .kw { font-size: 12.5px; border-radius: 2px; padding: 2px 8px; }
 .kw.stark { background: var(--accent-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); font-weight: 600; }
@@ -290,6 +285,8 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 .pvnav { font-size: 20px; padding: 6px 12px; }
 .pvnav:disabled { opacity: .3; }
 .pvfoot { text-align: center; color: var(--muted); font-size: 13px; padding: 0 0 10px; }
+.pvfoot .pvkeys { margin-left: 14px; opacity: .75; }
+.pvfoot #pvpage:empty + .pvkeys { margin-left: 0; }
 
 .zoom {
   position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .72);
@@ -325,6 +322,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Zm-1 10L4.3 8.3l1.1-1.1L7 8.8l3.6-3.6 1.1 1.1L7 11Z"/></svg>
     Alles wird auf diesem Rechner verarbeitet. Es werden keine Daten übertragen.
   </span>
+  <button class="btn" id="theme" title="Zwischen heller und dunkler Ansicht wechseln">Dunkle Ansicht</button>
   <button class="btn" id="rules">Erkennungsregeln</button>
 </header>
 
@@ -338,12 +336,22 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   </div>
 
   <div>
-    <span class="label">Antragsteller (für Dateien ohne erkannten Namen)</span>
+    <span class="label">Name für die markierten Dateien</span>
     <div class="field">
-      <input type="text" id="vNach" placeholder="Nachname" autocomplete="off" aria-label="Nachname des Antragstellers">
-      <input type="text" id="vVor" placeholder="Vorname" autocomplete="off" aria-label="Vorname des Antragstellers">
+      <input type="text" id="vNach" placeholder="Nachname" autocomplete="off" aria-label="Nachname für markierte Dateien">
+      <input type="text" id="vVor" placeholder="Vorname" autocomplete="off" aria-label="Vorname für markierte Dateien">
+      <button class="btn" id="vApply" disabled>In markierte Zeilen eintragen</button>
     </div>
-    <p class="hint">Wird nur verwendet, wenn im Dokument kein Name erkannt wird. Erkannte Namen bleiben erhalten.</p>
+    <p class="hint">Erst der Klick trägt den Namen ein – praktisch, wenn alle Scans zur selben Person gehören.
+      Beim Tippen ändert sich nichts; schon vorhandene Namen werden nur nach Rückfrage geändert.</p>
+    <span class="label" style="margin-top:14px">Eingang</span>
+    <div class="field">
+      <input type="date" id="eingang" aria-label="Eingangsdatum">
+      <label class="onlycheck"><input type="checkbox" id="stempel"> Eingangsstempel auf die Kopien</label>
+    </div>
+    <p class="hint">Der Baustein {Eingang} im Dateinamen nutzt dieses Datum. Der Stempel setzt
+      „Eingang: TT.MM.JJJJ“ oben rechts auf die erste Seite jeder gespeicherten Kopie –
+      die Originale bleiben unverändert.</p>
   </div>
 
   <div>
@@ -435,7 +443,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
       <img id="pvimg" alt="Dokumentvorschau">
       <button class="btn pvnav" id="pvnext" aria-label="Nächste Seite">›</button>
     </div>
-    <div class="pvfoot" id="pvpage"></div>
+    <div class="pvfoot"><span id="pvpage"></span><span class="pvkeys">Pfeiltasten: ← → Seite · ↑ ↓ Dokument</span></div>
   </div>
 </div>
 
@@ -454,7 +462,7 @@ const R = window.REGELN || null;
 const FS = typeof window.showDirectoryPicker === "function";
 const TYPES = R ? R.dokumenttypen.map((t) => t.name) : [];
 const UNKNOWN = (R && R.unbekannt) || "Sonstiges";
-const PLACEHOLDERS = ["{Nachname}", "{Vorname}", "{Dokumenttyp}", "{Datum}", "{Original}"];
+const PLACEHOLDERS = ["{Nachname}", "{Vorname}", "{Dokumenttyp}", "{Datum}", "{Eingang}", "{Original}"];
 
 const state = { dir: null, items: [], busy: false, running: 0, done: new Set() };
 
@@ -697,7 +705,6 @@ const ORGA = /sparkasse|bank\b|volksbank|stadtwerke|werke\b|gmbh|\bag\b|\bkg\b|k
 function okWord(w) { return w && w.length > 1 && !STOPWORDS.has(w.toLowerCase()) && !FELDWORT.test(w); }
 
 function findName(text) {
-  const vN = $("#vNach").value.trim(), vV = $("#vVor").value.trim();
   // 1) Formularfelder
   let m = text.match(new RegExp("Name\\s*,\\s*Vorname[^\\S\\n]*:?[^\\S\\n]*(" + W + ")\\s*,\\s*(" + W + ")"));
   if (m && okWord(m[1]) && okWord(m[2])) return { nachname: titleCase(m[1]), vorname: titleCase(m[2]), src: "Formularfeld", sure: true };
@@ -744,10 +751,20 @@ function findName(text) {
   // 4) Briefanrede („Sehr geehrte Frau Brandt“) – nur Nachname
   m = text.match(new RegExp("Sehr\\s+geehrte[rs]?\\s+(?:Frau|Herrn?)\\s+(?:Dr\\.\\s*)?(" + W + ")"));
   if (m && okWord(m[1])) return { nachname: titleCase(m[1]), vorname: "", src: "Anrede", sure: false };
-  // 5) Vorgabe: nur als Lückenfüller, wenn im Dokument KEIN Name erkannt wurde –
-  //    bei Stapeln mit mehreren Personen wird so nichts überschrieben
-  if (vN) return { nachname: vN, vorname: vV, src: "Vorgabe", sure: true };
   return { nachname: "", vorname: "", src: "nicht gefunden", sure: false };
+}
+/* Namensfeld oben: Erst der Klick trägt den Namen in alle MARKIERTEN Zeilen ein.
+   Vorhandene (erkannte oder von Hand gesetzte) Namen werden nur nach Rückfrage geändert. */
+function applyNameToSelected() {
+  const vN = $("#vNach").value.trim(), vV = $("#vVor").value.trim();
+  if (!vN || state.busy) return;
+  const sel = state.items.filter((i) => i.selected && i.status === "done");
+  if (!sel.length) { setStatus("Keine markierten Zeilen – bitte zuerst Dateien ankreuzen."); return; }
+  const anders = sel.filter((i) => (i.nachname || i.vorname) && (i.nachname !== vN || i.vorname !== vV)).length;
+  if (anders && !confirm(`${anders} der markierten ${anders === 1 ? "Datei hat" : "Dateien haben"} schon einen Namen. Auch ${anders === 1 ? "diesen" : "diese"} auf „${vN}${vV ? ", " + vV : ""}“ ändern?`)) return;
+  for (const it of sel) { it.nachname = vN; it.vorname = vV; it.manual.nachname = true; it.manual.vorname = true; renderRow(it); }
+  updateActions();
+  setStatus(`Name „${vN}${vV ? ", " + vV : ""}“ in ${sel.length} markierte ${sel.length === 1 ? "Zeile" : "Zeilen"} eingetragen.`);
 }
 
 /* ---------- Datum ---------- */
@@ -770,6 +787,7 @@ function buildName(item) {
     .replace(/\{Vorname\}/gi, clean(item.vorname))
     .replace(/\{Dokumenttyp\}/gi, clean(item.type) || UNKNOWN)
     .replace(/\{Datum\}/gi, item.datum || "")
+    .replace(/\{Eingang\}/gi, $("#eingang").value || "")
     .replace(/\{Original\}/gi, clean(orig));
   s = s.replace(/[<>:"/\\|?*\x00-\x1F]/g, "").replace(/_{2,}/g, "_").replace(/-{2,}/g, "-").replace(/^[_\-. ]+|[_\-. ]+$/g, "");
   if (!s) s = clean(orig) || "Dokument";
@@ -936,10 +954,6 @@ function surePageTypes(it) {
   if (c.n > pts.length) { c.n = 0; c.list = []; }
   while (c.n < pts.length) { c.list.push(classify(pts[c.n])); c.n++; }
   return c.list;
-}
-function reanalyseAll() {
-  for (const it of state.items) if (it.status === "done") { analyse(it); renderRow(it); }
-  updateActions();
 }
 
 /* ---------- Hintergrund-Lesen der restlichen Seiten ----------
@@ -1348,7 +1362,7 @@ function discardDerived(it) {
 }
 
 /* ---------- Dokumentvorschau im selben Fenster + Text kopieren ---------- */
-async function copyText(t) {
+async function copyText(t, btn) {
   const s = (t || "").trim();
   try { await navigator.clipboard.writeText(s); }
   catch {
@@ -1356,6 +1370,11 @@ async function copyText(t) {
     document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
   }
   setStatus("Der erkannte Text liegt in der Zwischenablage.");
+  if (btn && !btn.dataset.alt) {           // sichtbare Rückmeldung direkt am Knopf
+    btn.dataset.alt = btn.textContent;
+    btn.textContent = "Kopiert ✓"; btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = btn.dataset.alt; delete btn.dataset.alt; btn.classList.remove("copied"); }, 1600);
+  }
 }
 const pv = { it: null, page: 1, doc: null, url: null, seq: 0 };
 async function openPreview(it) {
@@ -1507,7 +1526,7 @@ function renderRow(it) {
   if (ready && it.text) {
     const d = document.createElement("details"); const s = document.createElement("summary"); s.textContent = "Erkannten Text anzeigen";
     const cp = document.createElement("button"); cp.className = "btn mini"; cp.textContent = "Text kopieren";
-    cp.title = "Den gesamten erkannten Text in die Zwischenablage kopieren"; cp.onclick = () => copyText(it.text);
+    cp.title = "Den gesamten erkannten Text in die Zwischenablage kopieren"; cp.onclick = () => copyText(it.text, cp);
     const pre = document.createElement("pre"); pre.textContent = it.text.trim().slice(0, 1500) || "(kein Text erkannt)";
     d.append(s, cp, pre); c7.appendChild(d);
   }
@@ -1539,6 +1558,7 @@ function updateActions() {
   $("#summary").innerHTML = t + ".";
   $("#apply").textContent = !state.dir ? "Als ZIP-Datei speichern" : "Umbenannte Kopien speichern";
   $("#apply").disabled = state.busy || sel.length === 0;
+  $("#vApply").disabled = state.busy || !$("#vNach").value.trim();
   const mergeOk = !state.busy && sel.length >= 2 && !!window.PDFLib;
   $("#selbar").classList.toggle("hidden", !mergeOk);
   if (mergeOk) $("#selinfo").textContent = `${sel.length} Dateien markiert –`;
@@ -1552,24 +1572,54 @@ function uniqueName(name, taken) {
   for (let i = 2; ; i++) { const n = `${base}_${i}${ext}`; if (!taken.has(n.toLowerCase())) { taken.add(n.toLowerCase()); return n; } }
 }
 function csvLine(cols) { return cols.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";"); }
-/* Erkannte oder von Hand gesetzte Drehungen beim Speichern in die KOPIE schreiben.
-   Das Original bleibt wie immer unberührt; schlägt das Drehen fehl, wird unverändert kopiert.
-   Gibt null zurück, wenn nichts zu drehen ist. */
+/* Eingangsstempel: Text für den Stempel aus dem Eingangsdatum (leer = kein Stempel) */
+function stampText() {
+  if (!$("#stempel").checked || !$("#eingang").value) return "";
+  const [y, m, d] = $("#eingang").value.split("-");
+  return `Eingang: ${d}.${m}.${y}`;
+}
+/* Stempel oben rechts auf eine pdf-lib-Seite setzen – richtig gelegt auch bei
+   gedrehten Seiten (/Rotate): Position und Textdrehung je nach Ansichtslage. */
+function stampPdfPage(pg, font, text) {
+  const size = 11, m = 14;
+  const w = font.widthOfTextAtSize(text, size);
+  const { width: W, height: H } = pg.getSize();
+  const R = (((pg.getRotation().angle || 0) % 360) + 360) % 360;
+  let x, y;
+  if (R === 0)        { x = W - m - w;    y = H - m - size; }
+  else if (R === 90)  { x = m + size;     y = H - m - w; }
+  else if (R === 180) { x = m + w;        y = m + size; }
+  else                { x = W - m - size; y = m + w; }
+  pg.drawText(text, { x, y, size, font, color: PDFLib.rgb(0.72, 0.1, 0.1), rotate: PDFLib.degrees(R), opacity: 0.9 });
+}
+/* Erkannte/gewählte Drehungen und (falls gewünscht) den Eingangsstempel beim Speichern
+   in die KOPIE schreiben. Das Original bleibt wie immer unberührt; schlägt der Schritt
+   fehl, wird unverändert kopiert. Gibt null zurück, wenn nichts zu tun ist. */
 async function outputData(it) {
   const rots = it.pageRot || [];
-  if (!rots.some((r) => r)) return null;
+  const dreht = rots.some((r) => r), stamp = stampText();
+  if (!dreht && !stamp) return null;
+  const hinweis = [dreht ? "gerade gedreht gespeichert" : "", stamp ? "Eingangsstempel gesetzt" : ""].filter(Boolean).join(" · ");
   try {
     const bytes = await fileBytes(it);
     if (/\.pdf$/i.test(it.name)) {
       const doc = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
       doc.getPages().forEach((pg, i) => turnPage(pg, rots[i]));
-      return await doc.save();
+      if (stamp) stampPdfPage(doc.getPage(0), await doc.embedFont(PDFLib.StandardFonts.HelveticaBold), stamp);
+      return { data: await doc.save(), hinweis };
     }
     const bmp = await createImageBitmap(new Blob([bytes]));
-    const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+    let c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
     c.getContext("2d").drawImage(bmp, 0, 0);
-    const url = rotateCanvas(c, rots[0]).toDataURL(/\.png$/i.test(it.name) ? "image/png" : "image/jpeg", 0.92);
-    return b64ToBytes(url.split(",")[1]);
+    c = rotateCanvas(c, rots[0]);
+    if (stamp) {
+      const ctx = c.getContext("2d"), size = Math.max(22, Math.round(c.width * 0.022));
+      ctx.font = "bold " + size + "px Arial, sans-serif";
+      ctx.fillStyle = "rgba(184, 26, 26, 0.9)";
+      ctx.fillText(stamp, c.width - ctx.measureText(stamp).width - 24, size + 20);
+    }
+    const url = c.toDataURL(/\.png$/i.test(it.name) ? "image/png" : "image/jpeg", 0.92);
+    return { data: b64ToBytes(url.split(",")[1]), hinweis };
   } catch (e) { console.error(e); return null; }
 }
 function stamp() { const d = new Date(), p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}`; }
@@ -1617,16 +1667,16 @@ async function applyFolder(sel, log, now) {
       const sub = (clean(it.nachname) || "Unbekannt") + (clean(it.vorname) ? "_" + clean(it.vorname) : "");
       const f = await folderFor(sub, await baseTarget.getDirectoryHandle(sub, { create: true }));
       const newName = uniqueName(buildName(it), f.taken);
-      const turned = await outputData(it);   // Drehungen in die Kopie schreiben
+      const turned = await outputData(it);   // Drehungen/Eingangsstempel in die Kopie schreiben
       if (it.data || !it.handle) {
         // Neu erstellte (Teilen/Zusammenführen) oder von außerhalb zugezogene Datei:
         // in den Stammordner schreiben; ein fremdes Original wird nie angefasst
         const fh = await f.dir.getFileHandle(newName, { create: true });
-        const w = await fh.createWritable(); await w.write(turned || (it.data ? it.data : await it.file.arrayBuffer())); await w.close();
+        const w = await fh.createWritable(); await w.write(turned ? turned.data : (it.data ? it.data : await it.file.arrayBuffer())); await w.close();
         it.appliedText = it.data ? "Neu erstellt" : "In den Ordner übernommen";
       } else {
         const fh = await f.dir.getFileHandle(newName, { create: true });
-        const w = await fh.createWritable(); await w.write(turned || await it.handle.getFile()); await w.close();
+        const w = await fh.createWritable(); await w.write(turned ? turned.data : await it.handle.getFile()); await w.close();
         // Original in den Unterordner „verarbeitet“ verschieben: Der Scan-Ordner zeigt so immer nur
         // die offene Arbeit – auch nach einem Neustart wird nichts doppelt eingelesen.
         let verschoben = false;
@@ -1652,7 +1702,7 @@ async function applyFolder(sel, log, now) {
       const rel = sub + "/" + newName;
       it.originalName = oldName; it.name = newName; it.status = "applied"; ok++;
       state.done.add(oldName.toLowerCase()); state.done.add(newName.toLowerCase());
-      const hint = (it.partInfo || "") + (turned ? (it.partInfo ? " · " : "") + "gerade gedreht gespeichert" : "");
+      const hint = [it.partInfo || "", turned ? turned.hinweis : ""].filter(Boolean).join(" · ");
       log.push(csvLine([now, oldName, rel, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, hint]));
     } catch (e) {
       console.error(e); it.status = "failed"; it.error = "Speichern fehlgeschlagen"; fail++;
@@ -1697,9 +1747,9 @@ async function applyZip(sel, log, now) {
     const sub = (clean(it.nachname) || "Unbekannt") + (clean(it.vorname) ? "_" + clean(it.vorname) : "");
     const newName = uniqueName(buildName(it), takenFor(sub));
     const rel = sub + "/" + newName;
-    const turned = await outputData(it);   // Drehungen in die Kopie schreiben
-    files.push({ name: rel, data: turned || it.data || new Uint8Array(await it.file.arrayBuffer()) });
-    const hint = (it.partInfo || "") + (turned ? (it.partInfo ? " · " : "") + "gerade gedreht gespeichert" : "");
+    const turned = await outputData(it);   // Drehungen/Eingangsstempel in die Kopie schreiben
+    files.push({ name: rel, data: turned ? turned.data : (it.data || new Uint8Array(await it.file.arrayBuffer())) });
+    const hint = [it.partInfo || "", turned ? turned.hinweis : ""].filter(Boolean).join(" · ");
     log.push(csvLine([now, it.name, rel, it.type, it.nachname, it.vorname, it.manual.type ? "von Hand" : it.typeSure ? "sicher" : "unsicher", (it.manual.nachname || it.manual.vorname) ? "von Hand" : it.nameSrc, hint]));
     it.originalName = it.name; it.name = newName; it.status = "applied"; it.appliedText = "In ZIP-Datei → " + sub; renderRow(it);
   }
@@ -1725,8 +1775,17 @@ function applyBrand() {
   }
   if (M.fusszeile) { $("#brandnote").textContent = M.fusszeile; $("#brandnote").classList.remove("hidden"); }
 }
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("#theme").textContent = t === "dark" ? "Helle Ansicht" : "Dunkle Ansicht";
+}
 function init() {
   applyBrand();
+  // Helle/dunkle Ansicht: Start nach Systemeinstellung, der Knopf merkt sich die Wahl
+  const sysDark = matchMedia("(prefers-color-scheme: dark)");
+  applyTheme(store.get("theme", "") || (sysDark.matches ? "dark" : "light"));
+  sysDark.addEventListener("change", (e) => { if (!store.get("theme", "")) applyTheme(e.matches ? "dark" : "light"); });
+  $("#theme").onclick = () => { const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; store.set("theme", t); applyTheme(t); };
   if (window.APP_VERSION) { const f = $("#firma"); f.textContent = (f.textContent ? f.textContent + " · " : "") + "Version " + window.APP_VERSION; }
   if (!R) { setStatus("Die Datei programm/regeln.js fehlt oder enthält einen Fehler. Bitte den Programmordner vollständig entpacken.", undefined, true); $("#pick").disabled = true; return; }
   if (!window.pdfjsLib || !window.Tesseract || !window.PDFLib || !window.TESS_WORKER_B64 || !window.TESS_DEU_B64) {
@@ -1749,8 +1808,13 @@ function init() {
   $("#rescan").onclick = rescanFolder;
   $("#rules").onclick = openRules;
   $("#rulesclose").onclick = () => $("#rulesdlg").close();
-  let deb; const re = () => { clearTimeout(deb); deb = setTimeout(reanalyseAll, 250); };
-  $("#vNach").oninput = re; $("#vVor").oninput = re;
+  $("#vNach").oninput = updateActions; $("#vVor").oninput = updateActions;
+  $("#vApply").onclick = applyNameToSelected;
+  const heute = new Date(), p2 = (n) => String(n).padStart(2, "0");
+  $("#eingang").value = `${heute.getFullYear()}-${p2(heute.getMonth() + 1)}-${p2(heute.getDate())}`;
+  $("#eingang").onchange = () => state.items.forEach(updatePreview);
+  $("#stempel").checked = store.get("stempel", "0") === "1";
+  $("#stempel").onchange = () => store.set("stempel", $("#stempel").checked ? "1" : "0");
   $("#all").onchange = (e) => { state.items.forEach((i) => { i.selected = e.target.checked; renderRow(i); }); updateActions(); };
   $("#apply").onclick = apply;
   $("#onlycheck").onchange = () => state.items.forEach(applyRowFilter);
@@ -1773,7 +1837,7 @@ function init() {
   $("#preview").onclick = (e) => { if (e.target === $("#preview")) closePreview(); };
   $("#pvprev").onclick = () => { if (pv.doc && pv.page > 1) { pv.page--; pvRender(); } };
   $("#pvnext").onclick = () => { if (pv.doc && pv.page < pv.doc.numPages) { pv.page++; pvRender(); } };
-  $("#pvcopy").onclick = () => pv.it && copyText(pv.it.text);
+  $("#pvcopy").onclick = () => pv.it && copyText(pv.it.text, $("#pvcopy"));
   $("#pvrot").onclick = async () => {
     if (!pv.it) return;
     const i = pv.doc ? pv.page - 1 : 0;
@@ -1793,7 +1857,20 @@ function init() {
     extUrl = URL.createObjectURL(f);
     window.open(extUrl, "_blank");
   };
-  addEventListener("keydown", (e) => { if (e.key === "Escape" && pv.it) closePreview(); });
+  // Tastatur in der Vorschau: Esc schließt, ←/→ blättern Seiten, ↑/↓ wechseln das Dokument
+  addEventListener("keydown", (e) => {
+    if (!pv.it) return;
+    if (e.key === "Escape") { closePreview(); return; }
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+    e.preventDefault();
+    if (e.key === "ArrowLeft" && pv.doc && pv.page > 1) { pv.page--; pvRender(); }
+    else if (e.key === "ArrowRight" && pv.doc && pv.page < pv.doc.numPages) { pv.page++; pvRender(); }
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      const list = state.items.filter((i) => i.status === "done" || i.status === "applied");
+      const next = list[list.indexOf(pv.it) + (e.key === "ArrowDown" ? 1 : -1)];
+      if (next) openPreview(next);
+    }
+  });
 }
 init();
 </script>

@@ -29,16 +29,23 @@ async def main():
         im = Image.open(io.BytesIO(base64.b64decode(thumb.split(",", 1)[1])))
         P.check("Miniatur steht aufrecht (Hochformat)", im.height > im.width, im.size)
 
-        # Beim Speichern (ZIP-Weg) wird die Drehung in die Kopie geschrieben
+        # Beim Speichern (ZIP-Weg): Drehung in der Kopie, {Eingang} im Namen, Eingangsstempel auf Seite 1
+        await pg.fill("#eingang", "2026-11-06")
+        await pg.check("#stempel")
+        await pg.fill("#muster", "{Nachname}_{Vorname}_{Dokumenttyp}_{Eingang}")
         async with pg.expect_download() as dl:
             await pg.click("#apply")
         z = zipfile.ZipFile(io.BytesIO(open(await (await dl.value).path(), "rb").read()))
         name = [n for n in z.namelist() if n.endswith(".pdf")][0]
         raw = z.read(name)
         P.check("Kopie heißt nach Person und Typ", "Mustermann_Erika_Mietbescheinigung" in name, name)
+        P.check("{Eingang} im Dateinamen", "_2026-11-06.pdf" in name, name)
         P.check("Drehung in der PDF gespeichert", rotation(raw) in (90, 270), rotation(raw))
+        P.check("Eingangsstempel auf Seite 1", "Eingang: 06.11.2026" in PdfReader(io.BytesIO(raw)).pages[0].extract_text())
         log = z.read([n for n in z.namelist() if n.startswith("Protokoll")][0]).decode("utf-8-sig")
         P.check("Protokoll-Hinweis aufs Drehen", "gerade gedreht" in log)
+        P.check("Protokoll-Hinweis auf den Stempel", "Eingangsstempel gesetzt" in log)
+        await pg.evaluate("localStorage.removeItem('us.stempel'); localStorage.removeItem('us.muster')")
 
         # B) Drehen von Hand in der Vorschau (gerades Dokument)
         await pg.goto(APP)
@@ -68,6 +75,18 @@ async def main():
                    hatBild: !!document.querySelector('#pvimg').src };
         })()""")
         P.check("Bildvorschau im Ordnermodus zeigt das Bild", r["hatBild"] and "nicht möglich" not in r["seite"], r)
+        # Tastatur: ↑/↓ wechseln das Dokument, ←/→ blättern Seiten
+        titel1 = await pg.inner_text("#pvtitle")
+        await pg.keyboard.press("ArrowDown"); await pg.wait_for_timeout(400)
+        P.check("Pfeil runter wechselt das Dokument", await pg.inner_text("#pvtitle") != titel1)
+        await pg.evaluate("closePreview()")
+        await pg.evaluate("openPreview(state.items.find(i => /Stapel/.test(i.name)))")
+        await pg.wait_for_function("document.querySelector('#pvpage').textContent.includes('Seite 1 von 5')", timeout=60000)
+        await pg.keyboard.press("ArrowRight")
+        await pg.wait_for_function("document.querySelector('#pvpage').textContent.includes('Seite 2 von 5')", timeout=60000)
+        await pg.keyboard.press("ArrowLeft")
+        await pg.wait_for_function("document.querySelector('#pvpage').textContent.includes('Seite 1 von 5')", timeout=60000)
+        P.check("Pfeile blättern Seiten", True)
         await pg.evaluate("closePreview()")
 
         # D) Zoom liegt IM Teilen-Dialog und damit sichtbar über ihm; Esc schließt erst den Zoom

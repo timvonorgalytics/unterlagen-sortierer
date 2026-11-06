@@ -2,6 +2,27 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.3.0 – 2026-11-06
+
+Rückmeldungen aus dem MVP-Test, direkt umgesetzt:
+
+- **Namensfeld wirkt erst per Knopf:** Oben einen Namen eintippen ändert
+  nichts mehr von selbst. Erst „In markierte Zeilen eintragen“ übernimmt
+  ihn in die angekreuzten Zeilen – praktisch, wenn alle Scans zur selben
+  Person gehören. Schon vorhandene Namen werden nur nach Rückfrage geändert.
+- **Eingangsdatum:** Neues Feld (vorbelegt mit heute); der Baustein
+  `{Eingang}` trägt es in den Dateinamen ein.
+- **Digitaler Eingangsstempel (abschaltbar):** Auf Wunsch setzt das
+  Programm „Eingang: TT.MM.JJJJ“ in Rot oben rechts auf die erste Seite
+  jeder gespeicherten Kopie – auch auf Fotos und richtig gelegen auf
+  gedrehten Seiten. Die Originale bleiben unverändert; das Protokoll
+  vermerkt den Stempel.
+- **Vorschau mit Pfeiltasten:** ←/→ blättern die Seiten des Dokuments,
+  ↑/↓ springen zum vorherigen/nächsten Dokument der Liste.
+- **Helle oder dunkle Ansicht:** Neuer Knopf oben rechts. Das Programm
+  startet passend zur Systemeinstellung; die eigene Wahl bleibt erhalten.
+- **„Text kopieren“ bestätigt sichtbar:** Der Knopf zeigt kurz „Kopiert ✓“.
+
 ## 1.2.0 – 2026-11-06
 
 Erste MVP-Version: neues Erscheinungsbild, automatische Dreh-Erkennung und

@@ -63,10 +63,22 @@ VERSION            Versionsnummer für das Release-ZIP
   Richtung übernommen. Ergebnis in `item.pageRot[]` (Grad im Uhrzeigersinn, die die Seite gerade
   stellen); `item.thumb`/`rec.thumb` sind bereits gedreht (`thumbRot` merkt sich, wie weit –
   `setRotDisplay()` dreht nach). Von Hand: „Seite drehen“ in der Vorschau, „drehen“ je Seite im
-  Teilen-Dialog. Beim Speichern schreibt `outputData(it)` die Drehung in die KOPIE (pdf-lib
-  `setRotation` bzw. Foto-Pixel neu kodiert; Fehlschlag → unveränderte Kopie); `doSplit`/
+  Teilen-Dialog. Beim Speichern schreibt `outputData(it)` Drehung UND (falls Haken gesetzt) den
+  Eingangsstempel in die KOPIE (pdf-lib `setRotation`/`drawText` bzw. Foto-Pixel neu kodiert;
+  Fehlschlag → unveränderte Kopie; Rückgabe `{data, hinweis}` fürs Protokoll); `doSplit`/
   `mergeSelected` drehen über `turnPage()` direkt beim Erzeugen, die neuen Dateien gelten als
   gerade (`pageRot` = 0). Das Original bleibt IMMER unangetastet.
+- **Eingang:** Feld `#eingang` (type=date, vorbelegt mit heute, NICHT gespeichert) → Baustein
+  `{Eingang}` in `buildName()`. Haken `#stempel` (localStorage `us.stempel`) → `stampText()`
+  „Eingang: TT.MM.JJJJ“; `stampPdfPage()` legt den Text oben rechts in ANSICHTSLAGE – bei
+  /Rotate 90/180/270 werden Position und Textdrehung je Fall umgerechnet (Tabelle im Code,
+  nicht „vereinfachen“: pdf-lib-Koordinaten sind unrotiert).
+- **Ansicht hell/dunkel:** KEINE `prefers-color-scheme`-Blöcke im CSS – alles hängt an
+  `:root[data-theme="dark"]`. `applyTheme()` setzt data-theme beim Start (gespeicherte Wahl
+  `us.theme`, sonst Systemeinstellung, auf die ein matchMedia-Listener reagiert); Knopf `#theme`
+  oben rechts schaltet um. So kann die Wahl die Systemeinstellung dauerhaft übersteuern.
+- **Vorschau-Tastatur:** Esc schließt, ←/→ blättern Seiten, ↑/↓ wechseln zum vorigen/nächsten
+  Dokument (Liste = Zeilen mit Status done/applied).
   Danach liest `backgroundScan()` die restlichen Seiten mehrseitiger PDFs leise nach (pausiert bei
   `state.busy` und offenem Teilen-Dialog, bricht ab, wenn die Zeile verschwindet): Es füllt NUR
   `pageTexts`/`multiHint` – Typ/Name angezeigter Zeilen werden NIE nachträglich geändert, und eine
@@ -86,9 +98,10 @@ VERSION            Versionsnummer für das Release-ZIP
   Nachname). Zeilen mit Ansprechpartner, Sachbearbeiter, Vermieter usw. (`NOT_PERSON`) und Namen direkt
   über „- Vermieter -“ werden übersprungen; `FELDWORT` verhindert, dass Beschriftungen („Vorname“,
   „Geburtsdatum“) als Namen durchgehen. Quellen-Vertrauen: Formularfeld sicher, Anschrift/Absender/
-  Anrede unsicher („Bitte prüfen“). Die Vorgabe aus den Eingabefeldern ist NUR Lückenfüller: Sie greift
-  erst, wenn das Dokument keinen Namen hergibt – erkannte Namen werden nie überschrieben (Tims Regel
-  für Stapel mit mehreren Personen). Fälle in `tests/test_namen.py` (direkt auf findName, ohne OCR).
+  Anrede unsicher („Bitte prüfen“). Das Namensfeld oben wirkt NICHT automatisch (Tims Regel seit
+  1.3.0): Erst der Knopf „In markierte Zeilen eintragen“ (`applyNameToSelected`) übernimmt den Namen
+  in die MARKIERTEN Zeilen als manuelle Eingabe; Zeilen mit anderem vorhandenen Namen nur nach
+  `confirm`-Rückfrage. Fälle in `tests/test_namen.py` (direkt auf findName, ohne OCR).
 - **Manuelle Änderungen** stehen in `item.manual` und werden beim Neu-Auswerten nicht überschrieben.
 - **Sortieren und teilen (Stapel-Scans):** Jede mehrseitige PDF hat „Sortieren und teilen …“ →
   `openSplit()` zeigt erst ALLE Miniaturen, dann wird jede Seite klassifiziert (Cache aus
@@ -142,8 +155,8 @@ VERSION            Versionsnummer für das Release-ZIP
   per `getAsFileSystemHandle` in den echten Ordnermodus). Filter „Nur zu prüfende anzeigen“
   (`applyRowFilter`, bewusst nur beim Neuzeichnen, damit Zeilen nicht beim Tippen verschwinden).
   „Erkennungsregeln“ (Kopfzeile) öffnet die Read-only-Ansicht aller Typen/Begriffe (`openRules()`).
-- **localStorage** nur für Programmeinstellungen (derzeit nur das Dateinamen-Muster). Nie Namen oder
-  Inhalte speichern.
+- **localStorage** nur für Programmeinstellungen (Dateinamen-Muster, Stempel an/aus, Ansicht
+  hell/dunkel). Nie Namen, Daten oder Inhalte speichern – auch das Eingangsdatum nicht.
 
 ## Fallstricke (alle schon einmal gelöst – nicht wieder einbauen)
 
@@ -178,11 +191,11 @@ python3 tests/test_dateimodus.py                             # einzelner Test
 
 | Test | Prüft |
 | --- | --- |
-| test_dateimodus.py | Typ + Name aller Testunterlagen ohne und mit Vorgabe; manuelle Korrektur; ZIP-Export |
+| test_dateimodus.py | Typ + Name aller Testunterlagen; Namensfeld wirkt erst per Knopf und nur auf markierte Zeilen (Überschreiben nur nach Rückfrage); manuelle Korrektur; ZIP-Export |
 | test_namen.py | findName direkt auf Textproben (zwei Vornamen, Formular-Tabellen, beschriftete Felder, Absender, Anrede) |
 | test_regeln.py | classify auf Textproben (neue Praxis-Typen + Regressionen), Drag & Drop, Filter, Regeln-Dialog |
 | test_teilen.py | Stapel-Scan: Mehrtyp-Hinweis, Trennvorschlag, leere Seite erkannt/weggelassen, Trennstelle von Hand, Teilen, ZIP + Protokoll-Hinweis; Zusammenführen PDF+JPG, Verwerfen |
-| test_drehen.py | Verdrehter Scan (tests/testdocs/extra/) wird erkannt + gerade gespeichert (pypdf prüft /Rotate), „Seite drehen“ von Hand, Vorschau im Ordnermodus, Zoom liegt ÜBER dem Dialog, pagesRead/pageTexts neu erzeugter Dateien |
+| test_drehen.py | Verdrehter Scan (tests/testdocs/extra/) wird erkannt + gerade gespeichert (pypdf prüft /Rotate), {Eingang} im Namen, Eingangsstempel auf Seite 1 + Protokoll, „Seite drehen“ von Hand, Vorschau im Ordnermodus + Pfeiltasten, Zoom liegt ÜBER dem Dialog, pagesRead/pageTexts neu erzeugter Dateien |
 | test_mehrkunden.py | Unterordner je Person (Ordner + ZIP), „Neue Dateien einlesen“, Stammordner (zugezogene Dateien ergänzen + landen im Ordner) |
 | test_ordnermodus.py | Standard-Ablage: umbenannt/<Person>/, Originale nach verarbeitet/, Ersatzweg ohne move(), keine Überschreibung, Fremddateien, Neustart liest nichts doppelt |
 | test_offline.py | läuft ohne Netz, null Netzanfragen |
