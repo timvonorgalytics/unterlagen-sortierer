@@ -1,0 +1,134 @@
+UNTERLAGEN-SORTIERER
+====================
+
+Das Programm liest eingescannte Unterlagen (PDF, JPG, PNG), erkennt den
+Dokumenttyp und den Namen und benennt die Dateien einheitlich um, z. B.:
+
+    Scan_0001.pdf   ->   Mustermann_Erika_Antrag.pdf
+    Scan_0002.pdf   ->   Mustermann_Erika_Kontoauszug.pdf
+
+Alles läuft auf diesem Rechner. Es werden keine Daten übertragen,
+eine Internetverbindung ist nicht nötig.
+
+
+STARTEN
+  Doppelklick auf "Unterlagen-Sortierer.html" (die einzige Datei im
+  obersten Ordner). Das Programm öffnet sich im Browser.
+
+  Öffnet sich dabei nicht Edge oder Chrome, liegen in diesem Ordner
+  zwei Helfer: "Start mit Edge.bat" (Windows) bzw.
+  "Start mit Chrome oder Edge.command" (macOS; beim ersten Mal
+  Rechtsklick -> "Öffnen"). Nur Edge und Chrome können Dateien
+  direkt im Ordner ablegen - andere Browser speichern das Ergebnis
+  als ZIP-Datei.
+
+
+SO GEHT'S
+  1. "Ordner wählen" klicken und den Ordner mit den Scans auswählen -
+     oder Dateien bzw. einen Ordner einfach aufs Fenster ziehen.
+     Beim ersten Mal fragt der Browser, ob das Programm den Ordner
+     bearbeiten darf: "Dateien bearbeiten" bzw. "Zulassen" wählen.
+
+  2. Das Programm liest die Dateien und erkennt je Dokument den Typ
+     und den Namen - auch wenn Unterlagen mehrerer Personen gemischt
+     im Ordner liegen.
+     Das Namensfeld oben greift nur bei Dateien, in denen KEIN Name
+     erkannt wird; erkannte Namen werden nie überschrieben.
+
+  3. Liste prüfen:
+       Grün  "Sicher"        -> Vorschlag ist eindeutig
+       Gelb  "Bitte prüfen"  -> kurz kontrollieren
+       Rot   "Name fehlt"    -> Name von Hand eintragen
+     Dokumenttyp und Name lassen sich in jeder Zeile ändern.
+     Ein Klick auf das kleine Vorschaubild öffnet eine Vorschau im
+     selben Fenster: blättern mit den Pfeilen, "Text kopieren" legt
+     den erkannten Text in die Zwischenablage (z. B. zum Einfügen in
+     einen DSGVO-konformen KI-Assistenten), "In neuem Fenster öffnen"
+     zeigt die Originaldatei. Der Kopier-Knopf steht auch unter
+     "Erkannten Text anzeigen" in jeder Zeile.
+     Zeilen ohne Haken werden nicht gespeichert.
+     Bei vielen Dateien hilft unten "Nur zu prüfende anzeigen".
+
+  4. Unten rechts auf "Umbenannte Kopien speichern" klicken.
+
+SO LEGT DAS PROGRAMM AB
+  - Die umbenannten Dateien kommen je Person in einen eigenen
+    Unterordner von "umbenannt" - z. B. umbenannt\Mustermann_Erika\.
+    Von dort lassen sie sich direkt per Drag & Drop in die eAkte
+    ziehen, pro Person ein Ordner.
+  - Die verarbeiteten Originale wandern unverändert in den
+    Unterordner "verarbeitet". Der Scan-Ordner zeigt so immer nur
+    die offene Arbeit - auch nach einem Neustart wird nichts doppelt
+    eingelesen. Soll eine Datei noch einmal verarbeitet werden:
+    einfach aus "verarbeitet" zurück in den Ordner ziehen.
+  - Es wird nie etwas überschrieben (doppelte Namen erhalten _2, _3).
+  - Jeder Durchgang legt ein Protokoll (Protokoll_Datum.csv) ab,
+    mit Excel lesbar: alte und neue Namen, Erkennungsquellen.
+
+LAUFENDER BETRIEB UND E-MAIL-ANHÄNGE
+  Legt die Scannersoftware laufend neue Dateien ab, holt
+  "Neue Dateien einlesen" nur die neuen dazu; erledigte Zeilen
+  verschwinden dabei aus der Liste.
+  Der zuerst gewählte Ordner ist der "Stammordner". Danach ins
+  Fenster gezogene Dateien oder fremde Ordner (z. B. gespeicherte
+  Mail-Anhänge) werden zur Liste HINZUGEFÜGT und beim Speichern in
+  den Stammordner übernommen; fremde Originale bleiben unberührt.
+
+STAPEL-SCANS SORTIEREN UND TEILEN
+  Jede mehrseitige PDF hat den Knopf "Sortieren und teilen ...".
+  Ein Klick öffnet alle Seiten als Vorschau; ein Klick auf eine
+  Seite vergrößert sie. Die Seiten lassen sich mit der Maus in
+  eine neue Reihenfolge ziehen. Das Programm schlägt Trennstellen
+  vor; ein Klick zwischen zwei Seiten setzt oder entfernt eine
+  Trennstelle. Leere Rückseiten (Duplex-Scan) werden erkannt und
+  weggelassen - "behalten" holt sie zurück, "weglassen" entfernt
+  auch andere Seiten. "In N Dateien teilen" erstellt für jeden
+  Abschnitt eine neue PDF-Datei mit eigenem Typ und Namen; nur
+  umsortiert oder bereinigt ergibt "Sortiert speichern" EINE neue
+  Datei. Das Original bleibt unverändert und wird nur abgewählt.
+  Tipp: Seiten aus verschiedenen Dateien sortieren geht über
+  "erst zusammenführen, dann sortieren".
+
+DATEIEN ZUSAMMENFÜHREN
+  Gehören mehrere Dateien zusammen (z. B. einzeln gescannte Seiten
+  eines Kontoauszugs): nur diese Zeilen ankreuzen. Über der Liste
+  erscheint dann "Zu einer PDF zusammenführen". Es entsteht eine
+  neue PDF-Datei mit allen Seiten; auch Fotos (JPG/PNG) werden als
+  Seiten übernommen. Die Originale bleiben unverändert in der Liste
+  und zeigen, in welche Datei sie eingeflossen sind. Hatten die
+  Dateien verschiedene Dokumenttypen, wird die neue Datei gelb
+  markiert - dann bitte den Typ selbst wählen.
+  "Verwerfen" entfernt eine neu erstellte Datei wieder aus der Liste.
+
+PERSONENLISTE (optional)
+  Eine CSV-Datei mit den Spalten Nachname;Vorname, z. B. aus Excel
+  ("Speichern unter" -> "CSV (Trennzeichen-getrennt)").
+  Das Programm ordnet dann jedes Dokument der passenden Person zu,
+  z. B. bei Ehepaaren. Die Liste wird nicht gespeichert.
+
+DATEINAME ANPASSEN
+  Im Feld "Neuer Dateiname" können Sie die Bausteine frei kombinieren:
+  {Nachname} {Vorname} {Dokumenttyp} {Datum} {Original}
+  Die Einstellung bleibt für das nächste Mal erhalten.
+
+ERKENNUNGSREGELN ANSEHEN
+  Der Knopf "Erkennungsregeln" oben rechts zeigt, an welchen
+  Begriffen das Programm jeden Dokumenttyp erkennt. Ändern kann
+  die Begriffe Ihre IT in der Datei programm\regeln.js
+  (siehe "Hinweise fuer die IT.txt").
+
+AUSPROBIEREN
+  Im Ordner programm\Beispiel-Scans liegen fiktive Testunterlagen.
+
+WENN ETWAS NICHT KLAPPT
+  - Falscher Browser öffnet sich: die Start-Helfer in diesem Ordner
+    verwenden (siehe STARTEN).
+  - macOS meldet "kann nicht geöffnet werden":
+    Rechtsklick auf die .command-Datei -> "Öffnen" -> bestätigen.
+    Das ist nur beim ersten Start nötig.
+  - "Dateien wählen" statt "Ordner wählen" wird angezeigt:
+    Der Browser erlaubt keinen Ordnerzugriff. Die umbenannten Dateien
+    werden dann als ZIP-Datei in den Download-Ordner gespeichert.
+  - Schlecht erkannte Dokumente: Scans mit 300 dpi und gerade
+    eingelegtem Papier liefern die besten Ergebnisse. Handschrift
+    wird nur eingeschränkt erkannt.

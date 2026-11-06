@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Unterlagen-Sortierer</title>
-<link rel="stylesheet" href="lib/fonts.css">
+<link rel="stylesheet" href="programm/lib/fonts.css">
 <style>
 :root {
   /* Markenwerte – werden aus marke.js überschrieben */
@@ -193,6 +193,14 @@ details pre {
 .actions .summary b { font-weight: 650; }
 .hidden { display: none !important; }
 
+/* Leiste über der Tabelle, sobald mehrere Zeilen markiert sind */
+.selbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line));
+  border-radius: 8px; padding: 8px 14px; margin: 0 0 10px;
+}
+.selbar span { font-size: 14px; }
+
 /* Ziehen und Ablegen */
 body.drag .empty { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
 body.drag .tablewrap { outline: 2px dashed var(--accent); outline-offset: -2px; }
@@ -250,6 +258,20 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 .kw.stark { background: var(--accent-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); font-weight: 600; }
 .kw.schwach { background: var(--paper); color: var(--muted); border: 1px dashed var(--line); }
 
+/* Dokumentvorschau im selben Fenster */
+.pv { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .55); display: grid; place-items: center; }
+.pvbox {
+  background: var(--sheet); color: var(--ink); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.45);
+  width: min(960px, 94vw); max-height: 92vh; display: flex; flex-direction: column;
+}
+.pvhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.pvtitle { flex: 1 1 200px; font-weight: 600; word-break: break-all; }
+.pvbody { display: flex; align-items: center; gap: 8px; padding: 12px; min-height: 0; }
+.pvbody img { flex: 1; min-width: 0; max-height: calc(92vh - 130px); object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 4px; }
+.pvnav { font-size: 20px; padding: 6px 12px; }
+.pvnav:disabled { opacity: .3; }
+.pvfoot { text-align: center; color: var(--muted); font-size: 13px; padding: 0 0 10px; }
+
 .zoom {
   position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .72);
   display: grid; place-items: center; cursor: zoom-out;
@@ -297,12 +319,12 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   </div>
 
   <div>
-    <span class="label">Antragsteller (gilt für alle Dateien)</span>
+    <span class="label">Antragsteller (für Dateien ohne erkannten Namen)</span>
     <div class="field">
       <input type="text" id="vNach" placeholder="Nachname" autocomplete="off" aria-label="Nachname des Antragstellers">
       <input type="text" id="vVor" placeholder="Vorname" autocomplete="off" aria-label="Vorname des Antragstellers">
     </div>
-    <p class="hint">Leer lassen, wenn der Name aus den Dokumenten gelesen werden soll.</p>
+    <p class="hint">Wird nur verwendet, wenn im Dokument kein Name erkannt wird. Erkannte Namen bleiben erhalten.</p>
     <div class="field" style="margin-top:10px">
       <button class="btn" id="plist">Personenliste laden</button>
       <input type="file" id="plistfile" accept=".csv,.txt,text/csv,text/plain" class="hidden">
@@ -314,15 +336,9 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <span class="label">Neuer Dateiname</span>
     <div class="field"><input type="text" id="muster" aria-label="Muster für den Dateinamen" spellcheck="false"></div>
     <div class="chips" id="chips"></div>
-    <div class="radio" id="ablage" role="radiogroup" aria-label="Ablage">
-      <label><input type="radio" name="ablage" value="kopie"> Kopien im Unterordner „umbenannt“ speichern (Originale wandern nach „verarbeitet“)</label>
-      <label><input type="radio" name="ablage" value="umbenennen"> Originaldateien umbenennen</label>
-      <label style="margin-top:4px"><input type="checkbox" id="perperson"> Je Person einen Unterordner anlegen</label>
-    </div>
-    <div class="field" style="margin-top:10px; align-items:center">
-      <label class="hint" for="seiten" style="margin:0">Seiten pro Dokument auswerten</label>
-      <select id="seiten"><option>1</option><option>2</option><option>3</option><option>5</option></select>
-    </div>
+    <p class="hint" style="margin-top:10px">So legt das Programm ab: Die umbenannten Dateien kommen je Person in einen
+      eigenen Unterordner von <strong>„umbenannt“</strong>; die verarbeiteten Originale wandern unverändert nach
+      <strong>„verarbeitet“</strong>. Der Scan-Ordner zeigt so immer nur die offene Arbeit.</p>
   </div>
 </section>
 
@@ -332,6 +348,10 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   <div class="empty" id="empty">
     <p><strong>Wählen Sie den Ordner mit den eingescannten Unterlagen – oder ziehen Sie Dateien bzw. einen Ordner einfach hierher.</strong></p>
     <p>Gelesen werden PDF-, JPG- und PNG-Dateien. Sie prüfen die Vorschläge, bevor etwas umbenannt wird.</p>
+  </div>
+  <div class="selbar hidden" id="selbar">
+    <span id="selinfo"></span>
+    <button class="btn" id="merge">Zu einer PDF zusammenführen</button>
   </div>
   <div class="tablewrap hidden" id="tablewrap">
     <table>
@@ -348,7 +368,6 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 <footer class="actions hidden" id="actions">
   <div class="summary" id="summary"></div>
   <label class="onlycheck"><input type="checkbox" id="onlycheck"> Nur zu prüfende anzeigen</label>
-  <button class="btn big" id="merge" hidden>Markierte zusammenführen</button>
   <button class="btn primary big" id="apply" disabled>Umbenennen</button>
 </footer>
 
@@ -369,12 +388,12 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 </dialog>
 
 <dialog class="split" id="splitdlg" aria-label="Datei teilen">
-  <div class="dlghead"><h2>Datei teilen</h2><span class="file" id="splitname"></span></div>
+  <div class="dlghead"><h2>Sortieren und teilen</h2><span class="file" id="splitname"></span></div>
   <div class="dlgbody">
     <p class="hint">Jede Seite wird gelesen und einem Dokumenttyp zugeordnet. Trennstellen werden vorgeschlagen –
-      klicken Sie zwischen zwei Seiten, um eine Trennstelle zu setzen oder zu entfernen. Ein Klick auf eine Seite
-      vergrößert sie. Leere Seiten (z. B. Rückseiten) werden erkannt und weggelassen – „behalten“ holt sie zurück.
-      Das Original bleibt unverändert.</p>
+      klicken Sie zwischen zwei Seiten, um eine Trennstelle zu setzen oder zu entfernen. Seiten lassen sich mit der
+      Maus in eine neue Reihenfolge ziehen; ein Klick auf eine Seite vergrößert sie. Leere Seiten (z. B. Rückseiten)
+      werden erkannt und weggelassen – „behalten“ holt sie zurück. Das Original bleibt unverändert.</p>
     <div class="pages" id="splitpages"></div>
   </div>
   <div class="dlgfoot">
@@ -386,14 +405,31 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 
 <div class="zoom hidden" id="zoom"><img id="zoomimg" alt="Vergrößerte Seitenansicht"></div>
 
-<script src="version.js"></script>
-<script src="../marke.js"></script>
-<script src="../regeln.js"></script>
-<script src="lib/pdf.min.js"></script>
-<script src="lib/pdf-lib.min.js"></script>
-<script src="lib/tesseract.min.js"></script>
-<script src="lib/tess-worker.js"></script>
-<script src="lib/deu.js"></script>
+<div class="pv hidden" id="preview">
+  <div class="pvbox">
+    <div class="pvhead">
+      <span class="pvtitle" id="pvtitle"></span>
+      <button class="btn" id="pvcopy">Text kopieren</button>
+      <button class="btn" id="pvext">In neuem Fenster öffnen</button>
+      <button class="btn" id="pvclose">Schließen</button>
+    </div>
+    <div class="pvbody">
+      <button class="btn pvnav" id="pvprev" aria-label="Vorherige Seite">‹</button>
+      <img id="pvimg" alt="Dokumentvorschau">
+      <button class="btn pvnav" id="pvnext" aria-label="Nächste Seite">›</button>
+    </div>
+    <div class="pvfoot" id="pvpage"></div>
+  </div>
+</div>
+
+<script src="programm/version.js"></script>
+<script src="programm/marke.js"></script>
+<script src="programm/regeln.js"></script>
+<script src="programm/lib/pdf.min.js"></script>
+<script src="programm/lib/pdf-lib.min.js"></script>
+<script src="programm/lib/tesseract.min.js"></script>
+<script src="programm/lib/tess-worker.js"></script>
+<script src="programm/lib/deu.js"></script>
 <script>
 "use strict";
 const $ = (s) => document.querySelector(s);
@@ -412,8 +448,6 @@ const store = {
 };
 function setting(name) {
   if (name === "muster") return $("#muster").value.trim() || (R && R.dateiname) || "{Nachname}_{Vorname}_{Dokumenttyp}";
-  if (name === "ablage") return (document.querySelector("input[name=ablage]:checked") || {}).value || "kopie";
-  if (name === "seiten") return parseInt($("#seiten").value, 10) || 2;
 }
 
 /* ---------- Hilfsfunktionen ---------- */
@@ -456,7 +490,7 @@ let pdfReady = null;
 function pdfLib() {
   if (!pdfReady) pdfReady = (async () => {
     // Worker im Hauptprogramm ausführen: funktioniert auch beim Öffnen direkt von der Festplatte
-    await loadScript("lib/pdf.worker.min.js");
+    await loadScript("programm/lib/pdf.worker.min.js");
     return window.pdfjsLib;
   })();
   return pdfReady;
@@ -467,7 +501,7 @@ let ocrReady = null;
 function ocr() {
   if (!ocrReady) ocrReady = withTimeout((async () => {
     const simd = WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]));
-    await loadScript(simd ? "lib/tess-core-simd.js" : "lib/tess-core.js");
+    await loadScript(simd ? "programm/lib/tess-core-simd.js" : "programm/lib/tess-core.js");
     // Sprachdaten, Kern und Worker in einem Paket: Beim Öffnen von der Festplatte darf der Worker nichts nachladen
     const offline = 'self.fetch = function (u) {' +
       ' if (String(u).indexOf("deu.traineddata") >= 0) { var b = atob(self.__DEU), a = new Uint8Array(b.length);' +
@@ -509,13 +543,20 @@ async function readText(item) {
     const pdfjs = await pdfLib();
     const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
     item.pages = doc.numPages;
-    const last = Math.min(doc.numPages, setting("seiten"));
-    for (let p = 1; p <= last; p++) {
+    // Schneller erster Durchgang: höchstens 2 Seiten Texterkennung je Datei, damit die Liste
+    // zügig steht. Textseiten (digitale PDFs) kosten fast nichts und werden alle gelesen,
+    // leere Rückseiten verbrauchen kein Budget. Die restlichen Seiten liest backgroundScan()
+    // später im Hintergrund nach – der Teilen-Dialog nutzt diesen Vorrat.
+    const total = Math.min(doc.numPages, 40);
+    let ocrBudget = 2;
+    let read = 0;
+    for (let p = 1; p <= total; p++) {
       const page = await doc.getPage(p);
       const tc = await page.getTextContent();
       const t = tc.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join("");
+      const hatText = t.replace(/\s/g, "").length >= 40;
       let canvas = null;
-      if (p === 1 || t.replace(/\s/g, "").length < 40) {
+      if (p === 1 || !hatText) {
         const base = page.getViewport({ scale: 1 });
         const scale = Math.max(1, Math.min(2.5, 2600 / Math.max(base.width, base.height)));
         const vp = page.getViewport({ scale });
@@ -524,19 +565,22 @@ async function readText(item) {
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
         if (p === 1) item.thumb = thumbnail(canvas);
       }
-      let pt;
-      if (t.replace(/\s/g, "").length >= 40) pt = t;
-      else { const r = await (await ocr()).addJob("recognize", canvas); pt = r.data.text; ocrUsed = true; }
-      item.pageTexts.push(pt); text += pt + "\n";
+      let pt = null;
+      if (hatText) pt = t;
+      else if (inkRatio(canvas) < 0.004) pt = "";              // leere Seite: kein OCR nötig
+      else if (ocrBudget > 0) { const r = await (await ocr()).addJob("recognize", canvas); pt = r.data.text; ocrUsed = true; ocrBudget--; }
       page.cleanup();
+      if (pt === null) break;                                  // Budget aufgebraucht – Rest nicht lesen
+      item.pageTexts.push(pt); text += pt + "\n"; read++;
     }
+    item.pagesRead = read;
     await doc.destroy();
   } else {
     const bmp = await createImageBitmap(file);
     const f = Math.min(1, 3000 / Math.max(bmp.width, bmp.height));
     const canvas = document.createElement("canvas"); canvas.width = Math.round(bmp.width * f); canvas.height = Math.round(bmp.height * f);
     canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    item.thumb = thumbnail(canvas); item.pages = 1;
+    item.thumb = thumbnail(canvas); item.pages = 1; item.pagesRead = 1;
     const r = await (await ocr()).addJob("recognize", canvas); text = r.data.text; ocrUsed = true;
     item.pageTexts = [text];
   }
@@ -593,8 +637,6 @@ function findName(text) {
     }
     if (best) return { nachname: best.p.nachname, vorname: best.p.vorname, src: "Personenliste", sure: true };
   }
-  // 2) Vorgabe für alle Dateien
-  if (vN) return { nachname: vN, vorname: vV, src: "Vorgabe", sure: true };
   // 3) Formularfelder
   let m = text.match(new RegExp("Name\\s*,\\s*Vorname[^\\S\\n]*:?[^\\S\\n]*(" + W + ")\\s*,\\s*(" + W + ")"));
   if (m && okWord(m[1]) && okWord(m[2])) return { nachname: titleCase(m[1]), vorname: titleCase(m[2]), src: "Formularfeld", sure: true };
@@ -641,6 +683,9 @@ function findName(text) {
   // 6) Briefanrede („Sehr geehrte Frau Brandt“) – nur Nachname
   m = text.match(new RegExp("Sehr\\s+geehrte[rs]?\\s+(?:Frau|Herrn?)\\s+(?:Dr\\.\\s*)?(" + W + ")"));
   if (m && okWord(m[1])) return { nachname: titleCase(m[1]), vorname: "", src: "Anrede", sure: false };
+  // 7) Vorgabe: nur als Lückenfüller, wenn im Dokument KEIN Name erkannt wurde –
+  //    bei Stapeln mit mehreren Personen wird so nichts überschrieben
+  if (vN) return { nachname: vN, vorname: vV, src: "Vorgabe", sure: true };
   return { nachname: "", vorname: "", src: "nicht gefunden", sure: false };
 }
 
@@ -804,6 +849,7 @@ async function start(items, append) {
   const errs = items.filter((i) => i.status === "error").length;
   setStatus(`Fertig: ${items.length - errs} Dateien gelesen${errs ? `, ${errs} mit Fehler` : ""}. Bitte die gelb markierten Vorschläge prüfen.`);
   updateActions();
+  backgroundScan();   // restliche Seiten mehrseitiger PDFs leise nachlesen
 }
 function analyse(it) {
   const c = classify(it.text);
@@ -826,6 +872,55 @@ function reanalyseAll() {
   updateActions();
 }
 
+/* ---------- Hintergrund-Lesen der restlichen Seiten ----------
+   Läuft an, sobald die Liste steht: liest die noch ungelesenen Seiten mehrseitiger PDFs,
+   damit der Teilen-Dialog sofort klassifizierte Seiten vorfindet und der Mehrtyp-Hinweis
+   auch bei langen Stapeln erscheint. Ändert NIE Typ oder Name bereits angezeigter Zeilen.
+   Pausiert, während gespeichert wird oder der Teilen-Dialog offen ist. */
+async function backgroundScan() {
+  if (state.bgRunning) return;
+  state.bgRunning = true;
+  try {
+    const pdfjs = await pdfLib();
+    for (const it of [...state.items]) {
+      if (state.busy || $("#splitdlg").open) break;
+      if (!state.items.includes(it) || it.status !== "done" || !/\.pdf$/i.test(it.name)) continue;
+      const max = Math.min(it.pages || 0, 40);
+      if (!it.pageTexts || (it.pagesRead || 0) >= max) continue;
+      const doc = await pdfjs.getDocument({ data: (await fileBytes(it)).slice(), isEvalSupported: false }).promise;
+      try {
+        for (let p = (it.pagesRead || 0) + 1; p <= max; p++) {
+          if (state.busy || $("#splitdlg").open || !state.items.includes(it) || it.status !== "done") break;
+          const page = await doc.getPage(p);
+          const tc = await page.getTextContent();
+          let t = tc.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join("");
+          if (t.replace(/\s/g, "").length < 40) {
+            const base = page.getViewport({ scale: 1 });
+            const scale = Math.max(1, Math.min(2.5, 2600 / Math.max(base.width, base.height)));
+            const vp = page.getViewport({ scale });
+            const canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+            const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            if (inkRatio(canvas) < 0.004) t = "";
+            else { const r = await (await ocr()).addJob("recognize", canvas); t = r.data.text; it.ocr = true; }
+          }
+          page.cleanup();
+          it.pageTexts.push(t); it.pagesRead = p;
+          // Mehrtyp-Hinweis nachziehen (ohne eine Zeile zu stören, in der gerade getippt wird)
+          if (!it.multiHint) {
+            const sure = new Set(it.pageTexts.map((x) => classify(x)).filter((c) => c.sure).map((c) => c.type));
+            if (sure.size > 1) {
+              it.multiHint = true;
+              if (it.tr && !it.tr.contains(document.activeElement)) renderRow(it);
+            }
+          }
+        }
+      } finally { await doc.destroy(); }
+    }
+  } catch (e) { console.error(e); }
+  state.bgRunning = false;
+}
+
 /* ---------- Teilen und Zusammenführen ---------- */
 async function fileBytes(it) {
   if (it.data) return it.data;
@@ -841,7 +936,7 @@ function newItem(props) {
   }, props);
 }
 
-const split = { item: null, pages: [], cuts: new Set(), bytes: null, doc: null, auto: true, abort: false, running: false };
+const split = { item: null, pages: [], order: [], cuts: new Set(), bytes: null, doc: null, auto: true, abort: false, running: false, drag: undefined };
 
 function canSplit(it) { return it.status === "done" && it.pages > 1 && /\.pdf$/i.test(it.name); }
 
@@ -855,7 +950,7 @@ function inkRatio(canvas) {
 
 async function openSplit(it) {
   if (state.busy || split.running) return;
-  split.item = it; split.pages = []; split.cuts = new Set(); split.auto = true; split.abort = false; split.running = true;
+  split.item = it; split.pages = []; split.order = []; split.cuts = new Set(); split.auto = true; split.abort = false; split.running = true; split.drag = undefined;
   $("#splitname").textContent = it.originalName || it.name;
   $("#splitpages").innerHTML = "";
   $("#splitok").disabled = true; $("#splitok").textContent = "Teilen";
@@ -882,9 +977,17 @@ async function openSplit(it) {
       page.cleanup();
       $("#splitinfo").textContent = `Seitenvorschau ${p} von ${total} …`;
     }
-    // 2. Durchgang: Text und Dokumenttyp je Seite (leere Seiten überspringen die Texterkennung)
+    // 2. Durchgang: Text und Dokumenttyp je Seite. Bereits (im Hintergrund) gelesene Seiten
+    // kommen aus dem Vorrat und sind sofort klassifiziert; leere Seiten überspringen die OCR.
     for (let p = 1; p <= total && !split.abort; p++) {
       const rec = split.pages[p - 1];
+      const cached = (split.item.pageTexts || [])[p - 1];
+      if (cached !== undefined) {
+        rec.text = cached; rec.cls = classify(cached);
+        if (cached === "") { rec.leer = true; rec.drop = true; }
+        markSplitPage(p, rec);
+        continue;
+      }
       const page = await doc.getPage(p);
       const base = page.getViewport({ scale: 1 });
       const tcont = await page.getTextContent();
@@ -918,34 +1021,57 @@ async function openSplit(it) {
   split.running = false;
 }
 function addSplitPage(p, rec) {
-  const wrap = $("#splitpages");
-  if (p > 1) {
-    const cut = document.createElement("button"); cut.type = "button"; cut.className = "cut"; cut.dataset.i = String(p - 1);
-    cut.setAttribute("aria-label", "Trennstelle vor Seite " + p);
-    cut.onclick = () => { split.auto = false; toggleCut(p - 1); };
+  split.order.push(p - 1);
+  renderSplitCard($("#splitpages"), split.order.length - 1, p - 1, rec);
+}
+function renderSplitCard(wrap, disp, orig, rec) {
+  if (disp > 0) {
+    const cut = document.createElement("button"); cut.type = "button"; cut.className = "cut" + (split.cuts.has(disp) ? " on" : ""); cut.dataset.i = String(disp);
+    cut.setAttribute("aria-label", "Trennstelle an Position " + (disp + 1));
+    cut.onclick = () => { split.auto = false; toggleCut(disp); };
     wrap.appendChild(cut);
   }
-  const card = document.createElement("div"); card.className = "page"; card.dataset.p = String(p);
-  const img = document.createElement("img"); img.src = rec.thumb; img.alt = "Seite " + p; img.title = "Seite vergrößern";
-  img.onclick = () => zoomPage(p);
-  const no = document.createElement("span"); no.className = "pno"; no.textContent = "Seite " + p;
+  const card = document.createElement("div"); card.className = "page"; card.dataset.p = String(orig + 1); card.dataset.disp = String(disp);
+  card.draggable = true; card.title = "Mit der Maus in eine neue Reihenfolge ziehen";
+  card.ondragstart = (e) => { split.drag = disp; e.dataTransfer.effectAllowed = "move"; };
+  card.ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
+  card.ondrop = (e) => { e.preventDefault(); if (split.drag !== undefined && split.drag !== disp) movePage(split.drag, disp); split.drag = undefined; };
+  const img = document.createElement("img"); img.src = rec.thumb; img.alt = "Seite " + (orig + 1); img.title = "Seite vergrößern";
+  img.onclick = () => zoomPage(orig + 1);
+  const no = document.createElement("span"); no.className = "pno"; no.textContent = "Seite " + (orig + 1);
   const ty = document.createElement("span"); ty.className = "ptype vage"; ty.textContent = "wird gelesen …";
   const skip = document.createElement("button"); skip.type = "button"; skip.className = "skippage"; skip.textContent = "weglassen";
   skip.title = "Diese Seite beim Teilen weglassen";
   skip.onclick = () => { rec.drop = !rec.drop; card.classList.toggle("drop", rec.drop); skip.textContent = rec.drop ? "behalten" : "weglassen"; updateSplitInfo(); };
   card.append(img, no, ty, skip);
   wrap.appendChild(card);
+  if (rec.cls || rec.leer) fillCardState(card, rec);
+}
+function fillCardState(card, rec) {
+  const ty = card.querySelector(".ptype"), skip = card.querySelector(".skippage");
+  if (rec.leer) { ty.textContent = "Leer"; ty.className = "ptype vage"; }
+  else if (rec.cls && rec.cls.sure) { ty.textContent = rec.cls.type; ty.className = "ptype"; ty.style.setProperty("--h", hue(rec.cls.type)); }
+  else if (rec.cls && rec.cls.type !== UNKNOWN) { ty.textContent = rec.cls.type + "?"; ty.className = "ptype vage"; }
+  else if (rec.cls) { ty.textContent = "unklar"; ty.className = "ptype vage"; }
+  card.classList.toggle("drop", rec.drop);
+  skip.textContent = rec.drop ? "behalten" : "weglassen";
 }
 function markSplitPage(p, rec) {
   const card = $("#splitpages").querySelector(`.page[data-p="${p}"]`);
-  if (!card) return;
-  const ty = card.querySelector(".ptype"), skip = card.querySelector(".skippage");
-  if (rec.leer) { ty.textContent = "Leer"; ty.className = "ptype vage"; }
-  else if (rec.cls.sure) { ty.textContent = rec.cls.type; ty.className = "ptype"; ty.style.setProperty("--h", hue(rec.cls.type)); }
-  else if (rec.cls.type !== UNKNOWN) { ty.textContent = rec.cls.type + "?"; ty.className = "ptype vage"; }
-  else { ty.textContent = "unklar"; ty.className = "ptype vage"; }
-  card.classList.toggle("drop", rec.drop);
-  skip.textContent = rec.drop ? "behalten" : "weglassen";
+  if (card) fillCardState(card, rec);
+}
+function renderSplitPages() {
+  const wrap = $("#splitpages"); wrap.innerHTML = "";
+  split.order.forEach((orig, disp) => renderSplitCard(wrap, disp, orig, split.pages[orig]));
+}
+/* Seite per Drag & Drop an eine neue Position ziehen: Trennvorschlag wird neu berechnet */
+function movePage(from, to) {
+  const [x] = split.order.splice(from, 1);
+  split.order.splice(to, 0, x);
+  split.cuts.clear(); split.auto = true;
+  renderSplitPages();
+  if (!split.running) proposeCuts();
+  updateSplitInfo();
 }
 async function zoomPage(p) {
   if (!split.doc) return;
@@ -968,12 +1094,13 @@ function toggleCut(i) {
   updateSplitInfo();
 }
 // Vorschlag: Neue Datei, sobald eine Seite sicher einen anderen Typ hat als der bisherige Abschnitt
+// (arbeitet auf der ANGEZEIGTEN Reihenfolge, auch nach dem Sortieren)
 function proposeCuts() {
   let segType = null;
-  for (let i = 0; i < split.pages.length; i++) {
-    const c = split.pages[i].cls;
+  for (let d = 0; d < split.order.length; d++) {
+    const c = split.pages[split.order[d]].cls;
     if (!c || !c.sure) continue;
-    if (segType && c.type !== segType && i > 0) { split.cuts.add(i); }
+    if (segType && c.type !== segType && d > 0) { split.cuts.add(d); }
     segType = c.type;
   }
   for (const i of split.cuts) {
@@ -997,33 +1124,40 @@ function splitSegments() {
   const starts = [0, ...cuts];
   const segs = [];
   for (let i = 0; i < starts.length; i++) {
-    const from = starts[i], to = (cuts[i] !== undefined ? cuts[i] : split.pages.length) - 1;
+    const from = starts[i], to = (cuts[i] !== undefined ? cuts[i] : split.order.length) - 1;
     const kept = [];
-    for (let p = from; p <= to; p++) if (split.pages[p] && !split.pages[p].drop) kept.push(p);
+    for (let d = from; d <= to; d++) { const o = split.order[d]; if (split.pages[o] && !split.pages[o].drop) kept.push(o); }
     if (!kept.length) continue;   // Abschnitt ohne behaltene Seiten entfällt
-    const text = kept.map((p) => split.pages[p].text).join("\n");
+    const text = kept.map((o) => split.pages[o].text).join("\n");
     segs.push({ kept, text, cls: classify(text) });
   }
   return segs;
 }
+function pagesLabel(kept) {   // Original-Seitennummern; Bereiche nur bei aufsteigender Folge
+  const asc = kept.every((v, i) => i === 0 || v === kept[i - 1] + 1);
+  return asc ? fmtPages(kept) : kept.map((o) => o + 1).join(", ");
+}
 function updateSplitInfo() {
   const segs = splitSegments();
   const dropped = split.pages.filter((r) => r.drop).length;
-  const label = (sg) => sg.cls.type + " (" + (sg.kept.length === 1 ? "Seite " : "Seiten ") + fmtPages(sg.kept) + ")";
+  const orderChanged = split.order.some((v, i) => v !== i);
+  const label = (sg) => sg.cls.type + " (" + (sg.kept.length === 1 ? "Seite " : "Seiten ") + pagesLabel(sg.kept) + ")";
   let info;
   if (!segs.length) info = "Alle Seiten sind weggelassen – bitte mindestens eine Seite behalten.";
-  else if (segs.length < 2 && !dropped) info = "Keine Trennstelle gesetzt. Klicken Sie zwischen zwei Seiten, um dort zu trennen.";
+  else if (segs.length < 2 && !dropped && !orderChanged) info = "Keine Trennstelle gesetzt. Klicken Sie zwischen zwei Seiten, um dort zu trennen – oder ziehen Sie Seiten in eine neue Reihenfolge.";
   else info = "Ergibt " + segs.length + (segs.length === 1 ? " Datei: " : " Dateien: ") + segs.map(label).join(" · ");
   if (dropped) info += ` – ${dropped} ${dropped === 1 ? "Seite wird" : "Seiten werden"} weggelassen.`;
   $("#splitinfo").textContent = info;
   $("#splitok").textContent = segs.length >= 2 ? "In " + segs.length + " Dateien teilen"
+    : segs.length === 1 && orderChanged ? "Sortiert speichern"
     : segs.length === 1 && dropped ? "Ohne weggelassene Seiten speichern" : "Teilen";
-  $("#splitok").disabled = split.running || !segs.length || (segs.length < 2 && !dropped);
+  $("#splitok").disabled = split.running || !segs.length || (segs.length < 2 && !dropped && !orderChanged);
 }
 async function doSplit() {
   const segs = splitSegments();
   const dropped = split.pages.filter((r) => r.drop).length;
-  if (!split.item || !segs.length || (segs.length < 2 && !dropped)) return;
+  const orderChanged = split.order.some((v, i) => v !== i);
+  if (!split.item || !segs.length || (segs.length < 2 && !dropped && !orderChanged)) return;
   $("#splitok").disabled = true; $("#splitinfo").textContent = "Die Dateien werden erstellt …";
   try {
     const src = await PDFLib.PDFDocument.load(split.bytes, { ignoreEncryption: true });
@@ -1037,11 +1171,11 @@ async function doSplit() {
       const data = await out.save();
       const pageRecs = sg.kept.map((p) => split.pages[p]);
       const ni = newItem({
-        name: segs.length === 1 ? `${base}_bereinigt.pdf` : `${base}_Teil${k + 1}.pdf`,
+        name: segs.length === 1 ? `${base}_${orderChanged ? "sortiert" : "bereinigt"}.pdf` : `${base}_Teil${k + 1}.pdf`,
         data, size: data.length,
         pages: sg.kept.length, thumb: pageRecs[0].thumb,
         text: sg.text, pageTexts: pageRecs.map((r) => r.text), ocr: pageRecs.some((r) => r.ocr),
-        partInfo: `${sg.kept.length === 1 ? "Seite " : "Seiten "}${fmtPages(sg.kept)} aus „${origName}“`,
+        partInfo: `${sg.kept.length === 1 ? "Seite " : "Seiten "}${pagesLabel(sg.kept)} aus „${origName}“`,
       });
       analyse(ni);
       items.push(ni);
@@ -1052,7 +1186,7 @@ async function doSplit() {
     $("#splitdlg").close();
     render();
     setStatus(items.length === 1
-      ? `„${origName}“ wurde ohne die weggelassenen Seiten neu erstellt. Das Original bleibt unverändert und ist abgewählt.`
+      ? `„${origName}“ wurde neu zusammengestellt. Das Original bleibt unverändert und ist abgewählt.`
       : `„${origName}“ wurde in ${items.length} Dateien geteilt. Das Original bleibt unverändert und ist abgewählt.`);
   } catch (e) {
     console.error(e);
@@ -1094,9 +1228,16 @@ async function mergeSelected() {
       partInfo: "Zusammengeführt aus " + names.map((n) => `„${n}“`).join(", "),
     });
     analyse(ni);
+    // Hatten die Quellen verschiedene erkannte Typen, wird der Typ NICHT stillschweigend
+    // von einer Datei übernommen, sondern zur Prüfung gelb markiert.
+    const srcTypes = new Set(sel.filter((s) => s.manual.type || s.typeSure).map((s) => s.type));
+    if (srcTypes.size > 1 && !ni.manual.type) {
+      ni.typeSure = false;
+      ni.why = "Aus verschiedenen Dokumenttypen (" + [...srcTypes].join(", ") + ") – bitte Typ wählen";
+    }
     const pos = state.items.indexOf(sel[sel.length - 1]);
     state.items.splice(pos + 1, 0, ni);
-    for (const it of sel) it.selected = false;
+    for (const it of sel) { it.selected = false; it.mergedInto = ni.name; }
     state.busy = false;
     render();
     setStatus(`${sel.length} Dateien zu einer PDF-Datei zusammengeführt. Die Originale bleiben unverändert und sind abgewählt.`);
@@ -1109,7 +1250,62 @@ async function mergeSelected() {
 function discardDerived(it) {
   const pos = state.items.indexOf(it);
   if (pos >= 0) state.items.splice(pos, 1);
+  for (const s of state.items) if (s.mergedInto === it.name) delete s.mergedInto;
   render();
+}
+
+/* ---------- Dokumentvorschau im selben Fenster + Text kopieren ---------- */
+async function copyText(t) {
+  const s = (t || "").trim();
+  try { await navigator.clipboard.writeText(s); }
+  catch {
+    const ta = document.createElement("textarea"); ta.value = s;
+    document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  setStatus("Der erkannte Text liegt in der Zwischenablage.");
+}
+const pv = { it: null, page: 1, doc: null, url: null };
+async function openPreview(it) {
+  pv.it = it; pv.page = 1;
+  $("#pvtitle").textContent = it.originalName || it.name;
+  $("#preview").classList.remove("hidden");
+  $("#pvimg").removeAttribute("src"); $("#pvpage").textContent = "wird geladen …";
+  try {
+    if (/\.pdf$/i.test(it.name)) {
+      const pdfjs = await pdfLib();
+      pv.doc = await pdfjs.getDocument({ data: (await fileBytes(it)).slice(), isEvalSupported: false }).promise;
+    } else {
+      pv.doc = null;
+      pv.url = URL.createObjectURL(it.file);
+    }
+    await pvRender();
+  } catch (e) { console.error(e); $("#pvpage").textContent = "Vorschau nicht möglich"; }
+}
+async function pvRender() {
+  if (!pv.it) return;
+  if (pv.doc) {
+    const page = await pv.doc.getPage(pv.page);
+    const base = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: Math.min(3, 1500 / Math.max(base.width, base.height)) });
+    const canvas = document.createElement("canvas"); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+    const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    page.cleanup();
+    $("#pvimg").src = canvas.toDataURL("image/jpeg", 0.85);
+    $("#pvpage").textContent = `Seite ${pv.page} von ${pv.doc.numPages}`;
+    $("#pvprev").disabled = pv.page <= 1;
+    $("#pvnext").disabled = pv.page >= pv.doc.numPages;
+  } else {
+    $("#pvimg").src = pv.url;
+    $("#pvpage").textContent = "";
+    $("#pvprev").disabled = true; $("#pvnext").disabled = true;
+  }
+}
+function closePreview() {
+  $("#preview").classList.add("hidden");
+  if (pv.doc) { pv.doc.destroy(); pv.doc = null; }
+  if (pv.url) { URL.revokeObjectURL(pv.url); pv.url = null; }
+  pv.it = null;
 }
 
 /* ---------- Erkennungsregeln anzeigen (nur Ansicht) ---------- */
@@ -1157,21 +1353,19 @@ function renderRow(it) {
   const c1 = td("sel"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = it.selected; cb.setAttribute("aria-label", "Datei " + it.name + " einbeziehen");
   cb.onchange = () => { it.selected = cb.checked; tr.classList.toggle("skip", !it.selected); updateActions(); }; c1.appendChild(cb);
 
-  const c2 = td("thumb"); const tb = document.createElement("button"); tb.className = "thumbbox"; tb.title = "Datei öffnen"; tb.setAttribute("aria-label", "Datei " + it.name + " öffnen");
+  const c2 = td("thumb"); const tb = document.createElement("button"); tb.className = "thumbbox"; tb.title = "Vorschau öffnen"; tb.setAttribute("aria-label", "Vorschau von " + it.name + " öffnen");
   if (it.thumb) { const im = document.createElement("img"); im.src = it.thumb; im.alt = ""; tb.appendChild(im); }
-  tb.onclick = async () => {
-    const f = it.data ? new Blob([it.data], { type: "application/pdf" }) : (it.file || await it.handle.getFile());
-    window.open(URL.createObjectURL(f), "_blank");
-  };
+  tb.onclick = () => openPreview(it);
   c2.appendChild(tb);
 
   const c3 = td("orig"); c3.textContent = it.originalName || it.name;
   if (it.pages) { const sm = document.createElement("small"); sm.textContent = (it.pages === 1 ? "1 Seite" : it.pages + " Seiten") + (it.ocr ? ", Texterkennung" : ""); c3.appendChild(sm); }
   if (it.partInfo) { const sm = document.createElement("small"); sm.textContent = it.partInfo; c3.appendChild(sm); }
-  if (it.splitInto) { const sm = document.createElement("small"); sm.textContent = it.splitInto === 1 ? "Ohne leere Seiten neu erstellt" : `In ${it.splitInto} Dateien geteilt`; c3.appendChild(sm); }
+  if (it.splitInto) { const sm = document.createElement("small"); sm.textContent = it.splitInto === 1 ? "Neu zusammengestellt" : `In ${it.splitInto} Dateien geteilt`; c3.appendChild(sm); }
+  if (it.mergedInto) { const sm = document.createElement("small"); sm.textContent = `Zusammengeführt in „${it.mergedInto}“`; c3.appendChild(sm); }
   if (canSplit(it)) {
-    const sp = document.createElement("button"); sp.className = "btn mini split"; sp.textContent = "Teilen …";
-    sp.title = "Datei in mehrere Dokumente aufteilen"; sp.onclick = () => openSplit(it);
+    const sp = document.createElement("button"); sp.className = "btn mini split"; sp.textContent = "Sortieren und teilen …";
+    sp.title = "Seiten ansehen, umsortieren, weglassen und in mehrere Dokumente aufteilen"; sp.onclick = () => openSplit(it);
     c3.appendChild(sp);
   }
   if (it.derived && it.status === "done") {
@@ -1191,7 +1385,7 @@ function renderRow(it) {
     const w = document.createElement("div"); w.className = "why"; w.textContent = it.manual.type ? "Von Hand gewählt" : it.why; c4.appendChild(w);
     if (it.multiHint && !it.manual.type && canSplit(it)) {
       const h = document.createElement("div"); h.className = "why warn";
-      h.textContent = "Enthält wohl mehrere Dokumente – über „Teilen“ auftrennen.";
+      h.textContent = "Enthält wohl mehrere Dokumente – über „Sortieren und teilen“ auftrennen.";
       c4.appendChild(h);
     }
   }
@@ -1210,8 +1404,10 @@ function renderRow(it) {
   const c7 = td(); it.previewEl = document.createElement("div"); c7.appendChild(it.previewEl); updatePreview(it);
   if (ready && it.text) {
     const d = document.createElement("details"); const s = document.createElement("summary"); s.textContent = "Erkannten Text anzeigen";
+    const cp = document.createElement("button"); cp.className = "btn mini"; cp.textContent = "Text kopieren";
+    cp.title = "Den gesamten erkannten Text in die Zwischenablage kopieren"; cp.onclick = () => copyText(it.text);
     const pre = document.createElement("pre"); pre.textContent = it.text.trim().slice(0, 1500) || "(kein Text erkannt)";
-    d.append(s, pre); c7.appendChild(d);
+    d.append(s, cp, pre); c7.appendChild(d);
   }
 
   const c8 = td(); const [cls, label] = rowState(it); const st = document.createElement("span"); st.className = "state " + cls; st.textContent = label; c8.appendChild(st);
@@ -1239,10 +1435,11 @@ function updateActions() {
   if (check) t += `, davon <b>${check}</b> zu prüfen`;
   if (applied) t += `. <b>${applied}</b> bereits erledigt`;
   $("#summary").innerHTML = t + ".";
-  const mode = setting("ablage");
-  $("#apply").textContent = !state.dir ? "Als ZIP-Datei speichern" : mode === "kopie" ? "Umbenannte Kopien speichern" : "Dateien umbenennen";
+  $("#apply").textContent = !state.dir ? "Als ZIP-Datei speichern" : "Umbenannte Kopien speichern";
   $("#apply").disabled = state.busy || sel.length === 0;
-  $("#merge").hidden = state.busy || sel.length < 2 || !window.PDFLib;
+  const mergeOk = !state.busy && sel.length >= 2 && !!window.PDFLib;
+  $("#selbar").classList.toggle("hidden", !mergeOk);
+  if (mergeOk) $("#selinfo").textContent = `${sel.length} Dateien markiert –`;
   $("#rescan").hidden = !state.dir || state.busy;
 }
 
@@ -1270,16 +1467,17 @@ async function apply() {
     console.error(e); setStatus("Fehler beim Speichern: " + (e && e.message || e), undefined, true);
   }
   state.busy = false; updateActions();
+  backgroundScan();
 }
 async function applyFolder(sel, log, now) {
-  const mode = setting("ablage");
   if (typeof state.dir.queryPermission === "function" &&
       (await state.dir.queryPermission({ mode: "readwrite" })) !== "granted" &&
       (await state.dir.requestPermission({ mode: "readwrite" })) !== "granted") {
     setStatus("Ohne Schreibrecht für den Ordner kann nichts gespeichert werden.", undefined, true); return;
   }
-  const baseTarget = mode === "kopie" ? await state.dir.getDirectoryHandle("umbenannt", { create: true }) : state.dir;
-  const perPerson = $("#perperson").checked;
+  // Fester Standard: Kopien nach umbenannt/<Person>/, Originale nach verarbeitet/
+  const baseTarget = await state.dir.getDirectoryHandle("umbenannt", { create: true });
+  const perPerson = true;
   // je Zielordner (Hauptordner oder Personen-Unterordner) eigene Liste vergebener Namen
   const folders = new Map();
   async function folderFor(key, dirHandle) {
@@ -1291,7 +1489,6 @@ async function applyFolder(sel, log, now) {
     return folders.get(key);
   }
   const root = await folderFor("", baseTarget);
-  if (mode === "umbenennen" && !perPerson) for (const it of sel) if (!it.data) root.taken.delete(it.name.toLowerCase());
   let ok = 0, fail = 0;
   for (const [i, it] of sel.entries()) {
     setStatus(`Speichere ${i + 1} von ${sel.length} …`, i / sel.length);
@@ -1309,7 +1506,7 @@ async function applyFolder(sel, log, now) {
         const fh = await f.dir.getFileHandle(newName, { create: true });
         const w = await fh.createWritable(); await w.write(it.data ? it.data : await it.file.arrayBuffer()); await w.close();
         it.appliedText = it.data ? "Neu erstellt" : "In den Ordner übernommen";
-      } else if (mode === "kopie") {
+      } else {
         const fh = await f.dir.getFileHandle(newName, { create: true });
         const w = await fh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
         // Original in den Unterordner „verarbeitet“ verschieben: Der Scan-Ordner zeigt so immer nur
@@ -1333,19 +1530,7 @@ async function applyFolder(sel, log, now) {
           }
         } catch (e) { console.error(e); }
         it.appliedText = verschoben ? "Kopie gespeichert, Original → verarbeitet" : "Kopie gespeichert";
-      } else if (perPerson || newName !== oldName) {
-        let moved = false;
-        if (typeof it.handle.move === "function") {
-          try { if (perPerson) await it.handle.move(f.dir, newName); else await it.handle.move(newName); moved = true; } catch {}
-        }
-        if (!moved) {
-          const fh = await f.dir.getFileHandle(newName, { create: true });
-          const w = await fh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
-          await state.dir.removeEntry(oldName);
-          it.handle = fh;
-        }
-        it.appliedText = sub ? "Umbenannt → " + sub : "Umbenannt";
-      } else it.appliedText = "Name unverändert";
+      }
       const rel = (sub ? sub + "/" : "") + newName;
       it.originalName = oldName; it.name = newName; it.status = "applied"; ok++;
       state.done.add(oldName.toLowerCase()); state.done.add(newName.toLowerCase());
@@ -1357,7 +1542,7 @@ async function applyFolder(sel, log, now) {
   }
   const lf = await baseTarget.getFileHandle(`Protokoll_${stamp()}.csv`, { create: true });
   const lw = await lf.createWritable(); await lw.write("\ufeff" + log.join("\r\n") + "\r\n"); await lw.close();
-  setStatus(`${ok} ${ok === 1 ? "Datei" : "Dateien"} ${mode === "kopie" ? "im Unterordner „umbenannt“ gespeichert" : "umbenannt"}${fail ? `, ${fail} fehlgeschlagen` : ""}. Ein Protokoll liegt im selben Ordner.`, undefined, fail > 0);
+  setStatus(`${ok} ${ok === 1 ? "Datei" : "Dateien"} im Unterordner „umbenannt“ gespeichert${fail ? `, ${fail} fehlgeschlagen` : ""}. Ein Protokoll liegt im selben Ordner.`, undefined, fail > 0);
 }
 
 /* ZIP ohne Kompression, wenn kein Ordnerzugriff möglich ist */
@@ -1386,7 +1571,7 @@ function makeZip(files) {
   return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: "application/zip" });
 }
 async function applyZip(sel, log, now) {
-  const perPerson = $("#perperson").checked;
+  const perPerson = true;   // je Person ein Unterordner – fester Standard
   const taken = new Map(), files = [];
   const takenFor = (k) => { if (!taken.has(k)) taken.set(k, new Set()); return taken.get(k); };
   for (const it of sel) {
@@ -1437,21 +1622,15 @@ function applyBrand() {
 function init() {
   applyBrand();
   if (window.APP_VERSION) { const f = $("#firma"); f.textContent = (f.textContent ? f.textContent + " · " : "") + "Version " + window.APP_VERSION; }
-  if (!R) { setStatus("Die Datei regeln.js fehlt oder enthält einen Fehler. Bitte den Programmordner vollständig entpacken.", undefined, true); $("#pick").disabled = true; return; }
+  if (!R) { setStatus("Die Datei programm/regeln.js fehlt oder enthält einen Fehler. Bitte den Programmordner vollständig entpacken.", undefined, true); $("#pick").disabled = true; return; }
   if (!window.pdfjsLib || !window.Tesseract || !window.PDFLib || !window.TESS_WORKER_B64 || !window.TESS_DEU_B64) {
-    setStatus("Programmdateien fehlen. Bitte den Ordner „app“ vollständig entpacken.", undefined, true); $("#pick").disabled = true; return;
+    setStatus("Programmdateien fehlen. Bitte den Ordner „programm“ vollständig entpacken.", undefined, true); $("#pick").disabled = true; return;
   }
   if (!FS) {
     $("#pick").textContent = "Dateien wählen";
-    const r = document.querySelector("input[value=umbenennen]"); r.disabled = true; r.parentElement.style.opacity = .5;
-    const k = document.querySelector("input[value=kopie]"); k.parentElement.lastChild.textContent = " Umbenannte Dateien als ZIP-Datei herunterladen";
-    setStatus("Hinweis: Dieser Browser kann Ordner nicht direkt bearbeiten. Mit Microsoft Edge oder Google Chrome lassen sich Dateien direkt im Ordner umbenennen.");
+    setStatus("Hinweis: Dieser Browser kann Ordner nicht direkt bearbeiten – die umbenannten Dateien werden als ZIP-Datei gespeichert. Mit Microsoft Edge oder Google Chrome arbeitet das Programm direkt im Ordner.");
   }
   $("#muster").value = store.get("muster", R.dateiname || "{Nachname}_{Vorname}_{Dokumenttyp}");
-  const ab = store.get("ablage", "kopie"); (document.querySelector(`input[name=ablage][value=${ab}]`) || document.querySelector("input[value=kopie]")).checked = true;
-  if (!FS) document.querySelector("input[value=kopie]").checked = true;
-  $("#seiten").value = store.get("seiten", String(R.seitenProDokument || 2));
-  if (![...$("#seiten").options].some((o) => o.selected)) $("#seiten").value = "2";
 
   for (const p of PLACEHOLDERS) {
     const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = p; b.title = p + " einfügen";
@@ -1461,13 +1640,9 @@ function init() {
   $("#pick").onclick = pickFolder;
   $("#filepick").onchange = (e) => { if (e.target.files.length) pickFiles(e.target.files); e.target.value = ""; };
   $("#muster").oninput = () => { store.set("muster", $("#muster").value); state.items.forEach(updatePreview); };
-  document.querySelectorAll("input[name=ablage]").forEach((r) => r.onchange = () => { store.set("ablage", setting("ablage")); updateActions(); });
-  $("#perperson").checked = store.get("perperson", "0") === "1";
-  $("#perperson").onchange = () => store.set("perperson", $("#perperson").checked ? "1" : "0");
   $("#rescan").onclick = rescanFolder;
   $("#rules").onclick = openRules;
   $("#rulesclose").onclick = () => $("#rulesdlg").close();
-  $("#seiten").onchange = () => store.set("seiten", $("#seiten").value);
   let deb; const re = () => { clearTimeout(deb); deb = setTimeout(reanalyseAll, 250); };
   $("#vNach").oninput = re; $("#vVor").oninput = re;
   $("#plist").onclick = () => $("#plistfile").click();
@@ -1491,8 +1666,20 @@ function init() {
   $("#splitdlg").addEventListener("close", () => {
     split.abort = true; $("#zoom").classList.add("hidden");
     if (split.doc) { split.doc.destroy(); split.doc = null; }
+    backgroundScan();   // pausiertes Hintergrund-Lesen fortsetzen
   });
   $("#zoom").onclick = () => $("#zoom").classList.add("hidden");
+  $("#pvclose").onclick = closePreview;
+  $("#preview").onclick = (e) => { if (e.target === $("#preview")) closePreview(); };
+  $("#pvprev").onclick = () => { if (pv.doc && pv.page > 1) { pv.page--; pvRender(); } };
+  $("#pvnext").onclick = () => { if (pv.doc && pv.page < pv.doc.numPages) { pv.page++; pvRender(); } };
+  $("#pvcopy").onclick = () => pv.it && copyText(pv.it.text);
+  $("#pvext").onclick = async () => {
+    if (!pv.it) return;
+    const f = pv.it.data ? new Blob([pv.it.data], { type: "application/pdf" }) : (pv.it.file || await pv.it.handle.getFile());
+    window.open(URL.createObjectURL(f), "_blank");
+  };
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && pv.it) closePreview(); });
 }
 init();
 </script>

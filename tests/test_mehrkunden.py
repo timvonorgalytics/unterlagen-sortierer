@@ -6,8 +6,8 @@ from _gemeinsam import ROOT, DOCS_DIR, Pruefer
 
 P = Pruefer("Mehrkunden")
 PORT = 8766
-URL = f"http://localhost:{PORT}/Unterlagen-Sortierer/app/index.html"
-APP_FILE = (ROOT / "Unterlagen-Sortierer" / "app" / "index.html").as_uri()
+URL = f"http://localhost:{PORT}/Unterlagen-Sortierer/Unterlagen-Sortierer.html"
+APP_FILE = (ROOT / "Unterlagen-Sortierer" / "Unterlagen-Sortierer.html").as_uri()
 MOCK = """window.showDirectoryPicker = async () => (await navigator.storage.getDirectory()).getDirectoryHandle('scans', { create: true });"""
 LIST = """async () => { const w = async (d, pfx) => { const out = {};
   for await (const [n, h] of d.entries()) { if (h.kind === 'file') out[pfx + n] = (await h.getFile()).size;
@@ -29,21 +29,19 @@ async def main():
             pg = await ctx.new_page(); errs = []; pg.on("pageerror", lambda e: errs.append(str(e)))
             pg.on("dialog", lambda d: asyncio.ensure_future(d.accept()))
 
-            # A) Ordnermodus, Originale umbenennen, je Person ein Unterordner; zwei Personen im selben Ordner
+            # A) Ordnermodus: zwei Personen im selben Ordner → je Person ein Unterordner (Standard)
             await pg.goto(URL)
             await pg.evaluate("async () => { const r = await navigator.storage.getDirectory(); try { await r.removeEntry('scans', { recursive: true }); } catch {} }")
             await put(pg, ["Scan_0002.pdf", "Scan_0004.pdf"])
-            await pg.check("input[name=ablage][value=umbenennen]")
-            await pg.check("#perperson")
             await pg.click("#pick")
             await pg.wait_for_function("state.items.length === 2 && !state.busy", timeout=240000)
             P.check("Knopf Neue Dateien sichtbar", await pg.is_visible("#rescan"))
             await pg.click("#apply"); await pg.wait_for_function("!state.busy")
             fs = await pg.evaluate(LIST)
-            P.check("Erika-Unterordner", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in fs, list(fs))
-            P.check("Hans-Unterordner", "Mustermann_Hans/Mustermann_Hans_Rentenbescheid.pdf" in fs, list(fs))
-            P.check("Keine Originale mehr oben", "Scan_0002.pdf" not in fs and "Scan_0004.pdf" not in fs, list(fs))
-            P.check("Protokoll im Hauptordner", any(k.startswith("Protokoll_") for k in fs), list(fs))
+            P.check("Erika-Unterordner", "umbenannt/Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in fs, sorted(fs))
+            P.check("Hans-Unterordner", "umbenannt/Mustermann_Hans/Mustermann_Hans_Rentenbescheid.pdf" in fs, sorted(fs))
+            P.check("Originale nach verarbeitet", "verarbeitet/Scan_0002.pdf" in fs and "Scan_0002.pdf" not in fs, sorted(fs))
+            P.check("Protokoll in umbenannt", any(k.startswith("umbenannt/Protokoll_") for k in fs), sorted(fs))
 
             # B) Neue Dateien einlesen: erledigte Zeilen fliegen raus, nur die neue Datei kommt dazu
             await put(pg, ["Scan_0005.pdf"])
@@ -69,16 +67,16 @@ async def main():
             P.check("Zugezogene Datei ergänzt", any(x["d"] == "Mail_Anhang.pdf" and x["ex"] for x in r), r)
             await pg.click("#apply"); await pg.wait_for_function("!state.busy")
             fs = await pg.evaluate(LIST)
-            P.check("Externe Datei im Stammordner", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in fs, list(fs))
-            P.check("Scan_0005 verarbeitet", any("Krankenversicherung" in k for k in fs), list(fs))
-            logs = sorted(k for k in fs if k.startswith("Protokoll_"))
+            P.check("Externe Datei im Stammordner", "umbenannt/Mustermann_Erika/Mustermann_Erika_Kontoauszug_2.pdf" in fs, sorted(fs))
+            P.check("Scan_0005 verarbeitet", any("Krankenversicherung" in k for k in fs) and "verarbeitet/Scan_0005.pdf" in fs, sorted(fs))
+            logs = sorted(k for k in fs if k.startswith("umbenannt/Protokoll_"))
             logtxt = await pg.evaluate("""async (n) => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('scans');
-                return await (await (await d.getFileHandle(n)).getFile()).text(); }""", logs[-1])
+                const u = await d.getDirectoryHandle('umbenannt');
+                return await (await (await u.getFileHandle(n.split('/')[1])).getFile()).text(); }""", logs[-1])
             P.check("Hinweis im Protokoll", "Per Drag & Drop hinzugefügt" in logtxt)
 
-            # C) Dateimodus (ZIP): Unterordner je Person als Pfade im ZIP
+            # C) Dateimodus (ZIP): Unterordner je Person als Pfade im ZIP (Standard)
             await pg.goto(APP_FILE)
-            await pg.check("#perperson")
             await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0002.pdf"), str(DOCS_DIR / "Scan_0004.pdf")])
             await pg.wait_for_function("state.items.length === 2 && !state.busy", timeout=240000)
             async with pg.expect_download() as dl:

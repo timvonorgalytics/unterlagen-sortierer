@@ -4,7 +4,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 PROG = ROOT / "Unterlagen-Sortierer"
-APP = (PROG / "app" / "index.html").as_uri()
+APP = (PROG / "Unterlagen-Sortierer.html").as_uri()
 DOCS_DIR = ROOT / "tests" / "testdocs"
 DOCS = sorted([str(p) for p in DOCS_DIR.glob("*.pdf")] + [str(p) for p in DOCS_DIR.glob("*.jpg")])
 

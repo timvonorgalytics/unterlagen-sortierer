@@ -7,7 +7,7 @@ P = Pruefer("CI")
 def rgb(h):
     h = h.lstrip("#"); return f"rgb({int(h[0:2],16)}, {int(h[2:4],16)}, {int(h[4:6],16)})"
 async def main():
-    marke = (PROG / "marke.js").read_text(encoding="utf-8")
+    marke = (PROG / "programm" / "marke.js").read_text(encoding="utf-8")
     prim = re.search(r'primaer:\s*"(#[0-9a-fA-F]{6})"', marke).group(1)
     text = re.search(r'text:\s*"(#[0-9a-fA-F]{6})"', marke).group(1)
     firma = re.search(r'firma:\s*"([^"]*)"', marke).group(1)

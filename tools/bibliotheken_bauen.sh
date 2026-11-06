@@ -6,7 +6,7 @@
 # ES-Module und Schriften per url() gesperrt. <script src> und data:-URLs funktionieren.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-LIB="$ROOT/Unterlagen-Sortierer/app/lib"
+LIB="$ROOT/Unterlagen-Sortierer/programm/lib"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
 TESSERACT=5.1.1          # Achtung: Workaround für Sprachdaten-Bug in index.html (siehe CLAUDE.md)

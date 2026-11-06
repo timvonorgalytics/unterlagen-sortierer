@@ -14,13 +14,29 @@ async def main():
         errs = []; pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.on("dialog", lambda d: asyncio.ensure_future(d.accept()))
 
-        # A) Stapel-Scan laden (alle Seiten auswerten, damit der Hinweis greift)
+        # A) Stapel-Scan laden; das Hintergrund-Lesen holt die restlichen Seiten und setzt den Hinweis
         await pg.goto(APP)
-        await pg.select_option("#seiten", "5")
         await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0007_Stapel.pdf")])
         await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
-        P.check("Mehrtyp-Hinweis", await pg.evaluate("state.items[0].multiHint === true"))
+        P.check("Erster Durchgang liest nicht alles", await pg.evaluate("state.items[0].pagesRead < state.items[0].pages"))
+        await pg.wait_for_function("state.items[0].pagesRead === state.items[0].pages", timeout=240000)
+        P.check("Mehrtyp-Hinweis nach Hintergrund-Lesen", await pg.evaluate("state.items[0].multiHint === true"))
         P.check("Teilen-Knopf sichtbar", await pg.is_visible("button.split"))
+
+        # A2) Vorschau im selben Fenster: blättern, Text kopieren, schließen
+        await pg.click("button.thumbbox")
+        await pg.wait_for_function("document.querySelector('#pvpage').textContent.includes('Seite 1 von 5')", timeout=60000)
+        P.check("Vorschau offen im selben Fenster", await pg.is_visible("#preview"))
+        await pg.click("#pvnext")
+        await pg.wait_for_function("document.querySelector('#pvpage').textContent.includes('Seite 2 von 5')", timeout=60000)
+        P.check("Blättern funktioniert", True)
+        await pg.evaluate("document.execCommand = () => true")  # Headless-Zwischenablage abfangen
+        await pg.click("#pvcopy")
+        await pg.wait_for_function("document.querySelector('#status').textContent.includes('Zwischenablage')", timeout=10000)
+        P.check("Kopieren meldet sich", True)
+        await pg.click("#pvclose")
+        P.check("Vorschau geschlossen", not await pg.is_visible("#preview"))
+        P.check("Kopier-Knopf in der Tabelle", await pg.evaluate("!!document.querySelector('td details button.mini')"))
 
         # B) Dialog: Seiten lesen, Vorschlag prüfen, leere Seite erkannt, Trennstelle von Hand ändern
         await pg.click("button.split")
@@ -51,9 +67,9 @@ async def main():
         z = zipfile.ZipFile(io.BytesIO(open(await (await dl.value).path(), "rb").read()))
         names = z.namelist()
         P.check("2 Teile + Protokoll", len(names) == 3, names)
-        P.check("Antrag-PDF im ZIP", "Mustermann_Erika_Antrag.pdf" in names, names)
-        P.check("Kontoauszug-PDF im ZIP", "Mustermann_Erika_Kontoauszug.pdf" in names, names)
-        teil = z.read("Mustermann_Erika_Antrag.pdf")
+        P.check("Antrag-PDF im ZIP", "Mustermann_Erika/Mustermann_Erika_Antrag.pdf" in names, names)
+        P.check("Kontoauszug-PDF im ZIP", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in names, names)
+        teil = z.read("Mustermann_Erika/Mustermann_Erika_Antrag.pdf")
         P.check("Gültige PDF-Datei", teil[:5] == b"%PDF-")
         n = await pg.evaluate(PAGECOUNT, base64.b64encode(teil).decode())
         P.check("Teil hat 2 Seiten", n == 2, n)
@@ -64,12 +80,14 @@ async def main():
         await pg.goto(APP)
         await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0002.pdf"), str(DOCS_DIR / "Foto_Ausweis.jpg")])
         await pg.wait_for_function("state.items.length === 2 && !state.busy", timeout=240000)
-        P.check("Zusammenführen sichtbar", await pg.is_visible("#merge"))
+        P.check("Zusammenführen-Leiste sichtbar", await pg.is_visible("#merge") and "2 Dateien markiert" in await pg.inner_text("#selinfo"))
         await pg.click("#merge")  # confirm() wird automatisch bestätigt
         await pg.wait_for_function("state.items.length === 3 && !state.busy", timeout=240000)
-        m = await pg.evaluate("state.items.map(i => ({ n: i.name, pg: i.pages, d: !!i.derived, sel: i.selected }))")
+        m = await pg.evaluate("state.items.map(i => ({ n: i.name, pg: i.pages, d: !!i.derived, sel: i.selected, mi: i.mergedInto || '', sure: !!i.typeSure }))")
         P.check("Neue Gesamt-PDF", m[2]['d'] and m[2]['pg'] == 2 and m[2]['n'].endswith("_gesamt.pdf"), m)
-        P.check("Originale abgewählt", not m[0]['sel'] and not m[1]['sel'], m)
+        P.check("Originale abgewählt und gekennzeichnet", not m[0]['sel'] and not m[1]['sel'] and m[0]['mi'] == m[2]['n'] and m[1]['mi'] == m[2]['n'], m)
+        P.check("Mischtypen → bitte prüfen", m[2]['sure'] is False, m[2])
+        P.check("Leiste nach Zusammenführen weg", not await pg.is_visible("#merge"))
         async with pg.expect_download() as dl:
             await pg.click("#apply")
         z2 = zipfile.ZipFile(io.BytesIO(open(await (await dl.value).path(), "rb").read()))
@@ -86,6 +104,25 @@ async def main():
         await pg.evaluate("render()")
         await pg.click("button.discard")
         P.check("Verworfen", await pg.evaluate("state.items.length") == 2)
+
+        # G) Sortieren: Seite an eine neue Position ziehen → neuer Trennvorschlag auf der neuen Reihenfolge
+        await pg.goto(APP)
+        await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0007_Stapel.pdf")])
+        await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
+        await pg.wait_for_function("state.items[0].pagesRead === state.items[0].pages", timeout=240000)
+        await pg.click("button.split")
+        await pg.wait_for_function("!split.running && split.pages.length === 5", timeout=240000)
+        await pg.evaluate("movePage(0, 4)")   # erste Antrag-Seite ans Ende ziehen
+        P.check("Reihenfolge geändert", await pg.evaluate("split.order.join(',')") == "1,2,3,4,0")
+        P.check("Neuer Vorschlag: 3 Teile", await pg.inner_text("#splitok") == "In 3 Dateien teilen",
+                await pg.evaluate("[...split.cuts].sort().join(',')"))
+        segs = await pg.evaluate("splitSegments().map(s => ({ t: s.cls.type, k: s.kept }))")
+        P.check("Segmente folgen der neuen Reihenfolge", segs[0]['t'] == "Antrag" and segs[1]['t'] == "Kontoauszug"
+                and segs[2]['t'] == "Antrag" and segs[2]['k'] == [0], segs)
+        await pg.evaluate("movePage(4, 0)")   # zurücksortieren → wieder 2 Teile, Original-Reihenfolge
+        P.check("Zurücksortiert", await pg.evaluate("split.order.join(',')") == "0,1,2,3,4"
+                and await pg.inner_text("#splitok") == "In 2 Dateien teilen")
+        await pg.click("#splitcancel")
 
         P.check("Keine JS-Fehler", not errs, errs[:3])
         await b.close()

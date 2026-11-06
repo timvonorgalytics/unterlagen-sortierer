@@ -30,9 +30,13 @@ async def main():
         for r in await run(pg):
             P.check(f"Typ {r['d']}", r['t'] == TYP[r['d']], f"→ {r['t']}")
             P.check(f"Name {r['d']}", r['n'] == PERS[r['d']], f"→ '{r['n']}' ({r['src']})")
-        # B) Vorgabe
+        # B) Vorgabe ist nur Lückenfüller: greift bei Scan_0008 (kein Name), überschreibt sonst nichts
         rows = await run(pg, "document.querySelector('#vNach').value='Mustermann';document.querySelector('#vVor').value='Erika'")
-        for r in rows: P.check(f"Vorgabe {r['d']}", r['n'] == "Mustermann Erika" and r['src'] == "Vorgabe", r['n'])
+        r8 = next(r for r in rows if r['d'] == "Scan_0008.pdf")
+        P.check("Vorgabe füllt Unbekannte", r8['n'] == "Mustermann Erika" and r8['src'] == "Vorgabe", r8)
+        for r in rows:
+            if r['d'] == "Scan_0008.pdf": continue
+            P.check(f"Vorgabe überschreibt nicht {r['d']}", r['n'] == PERS[r['d']] and r['src'] != "Vorgabe", f"{r['n']} ({r['src']})")
         P.check("Dateiname Antrag", any(r['neu'] == "Mustermann_Erika_Antrag.pdf" for r in rows))
         # C) Personenliste
         rows = await run(pg, plist=str(DOCS_DIR / "personen.csv"))
@@ -54,8 +58,10 @@ async def main():
         P.check("ZIP gültig", z.testzip() is None)
         P.check("9 Dateien + Protokoll", len(names) == 10, names)
         P.check("Abgewählte Datei fehlt", not any("Ausweis" in n for n in names))
-        P.check("Doppelte Namen nummeriert", "Mustermann_Erika_Kontoauszug.pdf" in names and "Mustermann_Erika_Kontoauszug_2.pdf" in names, names)
-        P.check("Inhalt unverändert", z.read("Mustermann_Erika_Antrag.pdf") == (DOCS_DIR / "Scan_0001.pdf").read_bytes())
+        P.check("Pfade je Person", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in names
+                and any(n.startswith("Mustermann_Hans/") for n in names), names)
+        P.check("Doppelte Namen nummeriert", "Mustermann_Erika/Mustermann_Erika_Kontoauszug_2.pdf" in names, names)
+        P.check("Inhalt unverändert", z.read("Mustermann_Erika/Mustermann_Erika_Antrag.pdf") == (DOCS_DIR / "Scan_0001.pdf").read_bytes())
         log = z.read([n for n in names if n.startswith("Protokoll")][0]).decode("utf-8-sig")
         P.check("Protokoll lesbar", "Originalname" in log and "Scan_0001.pdf" in log)
         P.check("Keine JS-Fehler", not errs, errs[:3])

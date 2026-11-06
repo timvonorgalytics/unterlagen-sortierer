@@ -26,30 +26,32 @@ direkt per Drag & Drop in die eAkte ziehen, wo der Dateiname sofort sagt, was dr
   für laufend eintreffende Scans, verarbeitete Originale wandern nach `verarbeitet/`
 - **Nachvollziehbar:** nie überschreiben, Excel-taugliches Protokoll-CSV je Durchgang
 - **100 % offline:** keine einzige Netzanfrage, automatisiert getestet —
-  siehe [Datenschutz auf einen Blick](Unterlagen-Sortierer/Datenschutz.txt)
+  siehe [Datenschutz auf einen Blick](Unterlagen-Sortierer/programm/Datenschutz.txt)
 
 ## Schnellstart
 
 1. Das aktuelle Release-ZIP herunterladen und entpacken.
-2. Starten per Doppelklick:
-   - **Windows:** `Unterlagen-Sortierer starten.bat` (öffnet Microsoft Edge)
-   - **macOS:** `Unterlagen-Sortierer starten.command` (beim ersten Start:
-     Rechtsklick → „Öffnen“)
+2. **Doppelklick auf `Unterlagen-Sortierer.html`** — die einzige Datei im obersten
+   Ordner. Öffnet sich dabei nicht Edge oder Chrome, liegen in `programm/` zwei
+   Start-Helfer (`Start mit Edge.bat` für Windows, `Start mit Chrome oder
+   Edge.command` für macOS — dort beim ersten Mal per Rechtsklick → „Öffnen“).
 3. Ordner mit den Scans wählen (oder Dateien ins Fenster ziehen), Vorschläge prüfen,
-   speichern. Fiktive Beispiel-Scans liegen im Ordner `Beispiel-Scans/`.
+   speichern: Die umbenannten Kopien landen je Person in einem Unterordner von
+   `umbenannt/`, die Originale wandern nach `verarbeitet/`. Fiktive Beispiel-Scans
+   liegen in `programm/Beispiel-Scans/`.
 
-Keine Installation, keine Adminrechte, kein Internet nötig. Vollen Funktionsumfang
-(Dateien direkt im Ordner umbenennen) bieten Edge und Chrome; andere Browser
-speichern das Ergebnis als ZIP-Datei.
+Keine Installation, keine Adminrechte, kein Internet nötig, keine Einstellungen.
+Vollen Funktionsumfang (direkt im Ordner arbeiten) bieten Edge und Chrome; andere
+Browser speichern das Ergebnis als ZIP-Datei.
 
 ## Anpassen (ohne Programmierung)
 
 | Datei | Zweck |
 | --- | --- |
-| `Unterlagen-Sortierer/regeln.js` | Dokumenttypen und Suchbegriffe, Standard-Dateinamenmuster |
-| `Unterlagen-Sortierer/marke.js` | Name, Farben, Logo, Fußzeile (Corporate Design) |
+| `Unterlagen-Sortierer/programm/regeln.js` | Dokumenttypen und Suchbegriffe, Standard-Dateinamenmuster |
+| `Unterlagen-Sortierer/programm/marke.js` | Name, Farben, Logo, Fußzeile (Corporate Design) |
 
-Details: `Unterlagen-Sortierer/Hinweise fuer die IT.txt` und `LIESMICH.txt`.
+Details: `programm/Hinweise fuer die IT.txt` und `programm/LIESMICH.txt`.
 Der Knopf **„Erkennungsregeln“** im Programm zeigt alle aktiven Begriffe an.
 
 ## Entwicklung
@@ -61,7 +63,7 @@ bash tests/alle_tests.sh                               # alle Tests (~150 Prüfu
 bash tools/release_bauen.sh                            # Auslieferungs-ZIP bauen
 ```
 
-Die gesamte Oberfläche und Logik steckt in `Unterlagen-Sortierer/app/index.html`
+Die gesamte Oberfläche und Logik steckt in `Unterlagen-Sortierer/Unterlagen-Sortierer.html`
 (eine Datei, kein Framework, kein Build-Schritt). Eingebettete Bibliotheken werden
 mit `tools/bibliotheken_bauen.sh` aus festgepinnten npm-Paketen erzeugt.
 Entwicklungs-Leitfaden: [CLAUDE.md](CLAUDE.md) · Änderungen: [CHANGELOG.md](CHANGELOG.md)
@@ -77,5 +79,5 @@ herzlichen Dank an [pdf.js](https://mozilla.github.io/pdf.js/) (Mozilla),
 [pdf-lib](https://pdf-lib.js.org/) sowie die Schriften
 [Geist](https://vercel.com/font) (Vercel) und
 [Lora](https://github.com/cyrealtype/Lora-Cyreal) (Cyreal).
-Die zugehörigen Lizenztexte liegen in `Unterlagen-Sortierer/app/lib/lizenzen/`
+Die zugehörigen Lizenztexte liegen in `Unterlagen-Sortierer/programm/lib/lizenzen/`
 und werden mit jeder Auslieferung mitgegeben.

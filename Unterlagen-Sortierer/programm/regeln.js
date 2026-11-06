@@ -18,9 +18,6 @@ window.REGELN = {
   // {Datum} ist das erste im Dokument gefundene Datum (JJJJ-MM-TT).
   dateiname: "{Nachname}_{Vorname}_{Dokumenttyp}",
 
-  // Wie viele Seiten pro Dokument ausgewertet werden (mehr = langsamer)
-  seitenProDokument: 2,
-
   // Typ, wenn nichts passt
   unbekannt: "Sonstiges",
 

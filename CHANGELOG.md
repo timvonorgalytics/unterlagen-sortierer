@@ -2,6 +2,38 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.1.0 – 2026-11-06
+
+Vereinfachungen nach dem ersten Praxistest – es gibt keine Modi und keine
+Einstellungen mehr, die der Service Point verstehen muss:
+
+- **Eine Datei zum Starten:** Im obersten Ordner liegt nur noch
+  `Unterlagen-Sortierer.html` (Doppelklick). Alles andere – Bibliotheken, Regeln,
+  Anleitungen, Beispiel-Scans, Start-Helfer für Sonderfälle – liegt in `programm/`.
+- **Ein fester Ablageweg:** Umbenannte Kopien kommen immer je Person in einen
+  Unterordner von `umbenannt/`, die Originale wandern immer nach `verarbeitet/`.
+  Die frühere Auswahl (Umbenennen-Modus, Personen-Haken) entfällt.
+- **Namens-Vorgabe ist nur noch Lückenfüller:** Sie greift ausschließlich bei
+  Dateien ohne erkannten Namen und überschreibt nie erkannte Namen – wichtig,
+  wenn Unterlagen mehrerer Personen gemischt eingelesen werden.
+- **Zusammenführen am richtigen Ort:** Zeilen ankreuzen → über der Liste erscheint
+  „Zu einer PDF zusammenführen“. Unten rechts bleibt nur der Speichern-Knopf.
+  Quellen bleiben sichtbar („Zusammengeführt in …“); bei gemischten Dokumenttypen
+  wird das Ergebnis zur Prüfung gelb markiert.
+- **Seiten-Lesen automatisch statt Einstellung:** Erst werden je Datei höchstens
+  zwei Seiten per Texterkennung gelesen (die Liste steht schnell), danach liest
+  das Programm die restlichen Seiten im Hintergrund nach – der Teilen-Dialog
+  findet sie dann schon klassifiziert vor. Leere Seiten kosten nie Lesezeit.
+- **Sortieren und teilen:** Im Dialog lassen sich die Seiten jetzt mit der Maus
+  in eine neue Reihenfolge ziehen (der Trennvorschlag folgt der neuen Ordnung);
+  nur Umsortieren oder Bereinigen ergibt „Sortiert speichern“. Seiten mehrerer
+  Dateien: erst zusammenführen, dann sortieren.
+- **Vorschau im selben Fenster:** Klick aufs Vorschaubild öffnet eine blätterbare
+  Vorschau statt eines neuen Browser-Tabs; „In neuem Fenster öffnen“ bleibt als
+  Extra. Neu: „Text kopieren“ legt den erkannten Text in die Zwischenablage
+  (z. B. für einen DSGVO-konformen KI-Assistenten) – auch in jeder Tabellenzeile
+  unter „Erkannten Text anzeigen“.
+
 ## 1.0.0 – 2026-11-06
 
 Erste veröffentlichte Version.
