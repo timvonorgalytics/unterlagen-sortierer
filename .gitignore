@@ -1,4 +1,5 @@
 dist/
+CLAUDE.local.md
 tests/screenshots/
 __pycache__/
 *.pyc

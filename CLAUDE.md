@@ -156,6 +156,6 @@ für alle Kunden gleich. Kundenspezifische Dateien nicht in dieses Repo eincheck
 
 ## Offene Punkte
 
-- [ ] Orgalytics-Bildmarke in `marke.js` einsetzen
+- [x] Orgalytics-Bildmarke in `marke.js` eingesetzt (06.11.2026)
 - [ ] Erster Test auf echtem Windows-PC mit Edge und auf einem Mac (Doppelklick auf die .command)
 - [ ] Regeln mit echten (anonymisierten) Kundenbeispielen schärfen
