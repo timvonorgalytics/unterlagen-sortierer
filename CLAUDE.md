@@ -76,9 +76,14 @@ oder `applyZip()` (Ersatz ohne Ordnerzugriff, eigener ZIP-Schreiber ohne Kompres
   Dateien per Drag & Drop an; die ZIP ist NUR der Notweg ohne Ordnerzugriff.
 - **Mehrkunden/Dauerbetrieb:** Ohne Vorgabe wird der Name je Dokument erkannt → mehrere Personen in
   einem Durchlauf. „Neue Dateien einlesen“ (`rescanFolder()`): entfernt erledigte (applied) Zeilen,
-  liest nur Dateien nach, die weder in der Liste noch in `state.done` stehen (dort landen alte UND
-  neue Namen beim Speichern – wichtig im Kopien-Modus, wo Originale liegen bleiben). `start(items,
-  append)` hängt neue Dateien an, statt die Liste zu ersetzen.
+  liest nur Dateien nach, die weder in der Liste noch in `state.done` stehen. `start(items, append)`
+  hängt neue Dateien an, statt die Liste zu ersetzen. **Der Scan-Ordner ist die Wahrheit:** Im
+  Kopien-Modus wandert das Original nach dem Speichern in den Unterordner `verarbeitet/`
+  (Vorher-Check per `state.dir.resolve(handle)`, damit nichts doppelt verschoben wird; scheitert das
+  Verschieben, bleibt die Zeile trotzdem „applied“). Dadurch überlebt der Arbeitsstand jeden
+  Browser-Neustart OHNE persistenten Speicher – `state.done` lebt bewusst nur im Arbeitsspeicher,
+  denn Dateinamen sind Personendaten und dürfen nie in localStorage (Regel 2/localStorage-Regel).
+  Zurückholen = Datei im Explorer aus `verarbeitet/` zurückziehen.
 - **Bedienung:** Drag & Drop von Dateien oder einem Ordner aufs Fenster (`initDrop()`; ein Ordner kommt
   per `getAsFileSystemHandle` in den echten Ordnermodus). Filter „Nur zu prüfende anzeigen“
   (`applyRowFilter`, bewusst nur beim Neuzeichnen, damit Zeilen nicht beim Tippen verschwinden).

@@ -45,7 +45,8 @@ SO GEHT'S
 
   5. Unten rechts auf den Knopf klicken:
        "Umbenannte Kopien speichern" -> Kopien im Unterordner "umbenannt",
-                                         die Originale bleiben erhalten
+                                         die Originale wandern unverändert
+                                         in den Unterordner "verarbeitet"
        "Dateien umbenennen"          -> die Originale werden umbenannt
      Die Auswahl treffen Sie oben rechts unter "Neuer Dateiname".
 
@@ -64,6 +65,11 @@ MEHRERE PERSONEN UND LAUFENDER BETRIEB
   liegen. Legt die Scannersoftware laufend neue Dateien ab, holt
   "Neue Dateien einlesen" nur die neuen dazu; bereits erledigte
   Zeilen verschwinden dabei aus der Liste.
+  Der Scan-Ordner zeigt immer nur die offene Arbeit: Verarbeitete
+  Originale liegen im Unterordner "verarbeitet". Auch nach dem
+  Schließen und Neustarten des Programms wird deshalb nichts
+  doppelt eingelesen. Soll eine Datei noch einmal verarbeitet
+  werden: einfach aus "verarbeitet" zurück in den Ordner ziehen.
 
 ERKENNUNGSREGELN ANSEHEN
   Der Knopf "Erkennungsregeln" oben rechts zeigt, an welchen

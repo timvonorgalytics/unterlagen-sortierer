@@ -39,8 +39,8 @@ async def main():
             P.check("Nur PDF/JPG/PNG eingelesen", await pg.evaluate("state.items.length") == len(NAMES))
             P.check("Knopf: Kopien", await pg.inner_text("#apply") == "Umbenannte Kopien speichern")
             await pg.click("#apply"); await pg.wait_for_function("!state.busy")
-            fs = await pg.evaluate(LIST); sub = fs.get("umbenannt/", {})
-            P.check("Originale unverändert", all(n in fs for n in NAMES))
+            fs = await pg.evaluate(LIST); sub = fs.get("umbenannt/", {}); verarb = fs.get("verarbeitet/", {})
+            P.check("Originale nach verarbeitet verschoben", all(n in verarb for n in NAMES) and not any(n in fs for n in NAMES), list(fs))
             P.check("Kopien + Protokoll", len(sub) == len(NAMES) + 1, list(sub))
             P.check("Kopie vollständig", sub.get("Mustermann_Erika_Antrag.pdf") == size)
             # zweiter Lauf in denselben Unterordner
@@ -48,6 +48,11 @@ async def main():
             await pg.click("#apply"); await pg.wait_for_function("!state.busy")
             sub2 = (await pg.evaluate(LIST)).get("umbenannt/", {})
             P.check("Nichts überschrieben (_2)", "Mustermann_Erika_Antrag_2.pdf" in sub2 and "Mustermann_Erika_Antrag.pdf" in sub2)
+            # Browser "neu gestartet": Ordner erneut wählen -> nichts mehr offen, nichts doppelt
+            await pg.goto(URL)
+            await pg.click("#pick")
+            await pg.wait_for_function("document.querySelector('#status').textContent.includes('keine PDF')", timeout=30000)
+            P.check("Nach Neustart nichts mehr offen", await pg.evaluate("state.items.length") == 0)
             # Originale umbenennen
             await fresh(pg); await pg.check("input[name=ablage][value=umbenennen]")
             P.check("Knopf: Umbenennen", await pg.inner_text("#apply") == "Dateien umbenennen")
