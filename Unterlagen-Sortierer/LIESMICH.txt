@@ -59,6 +59,14 @@ SO GEHT'S
   Person ein eigener Ordner - praktisch, wenn Unterlagen mehrerer
   Personen in einem Durchgang verarbeitet werden.
 
+DATEIEN AUS E-MAILS DAZULEGEN
+  Der zuerst gewählte Ordner ist der "Stammordner". Ziehen Sie
+  danach weitere Dateien oder einen anderen Ordner ins Fenster
+  (z. B. gespeicherte Mail-Anhänge), werden diese zur Liste
+  HINZUGEFÜGT. Beim Speichern landen auch sie umbenannt im
+  Stammordner; die fremden Originale bleiben unberührt, fremde
+  Ordner werden nie verändert.
+
 MEHRERE PERSONEN UND LAUFENDER BETRIEB
   Ohne Namens-Vorgabe erkennt das Programm den Namen je Dokument -
   Unterlagen mehrerer Personen können also zusammen in einem Ordner

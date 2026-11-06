@@ -56,6 +56,26 @@ async def main():
             P.check("Meldung: keine neuen Dateien", True)
             P.check("Nichts doppelt eingelesen", await pg.evaluate("state.items.length") == 1)
 
+            # B2) Stammordner: zugezogene Datei ERGÄNZT die Liste und wird beim Speichern in den Ordner übernommen
+            await pg.evaluate("""async () => {
+                const b = await (await fetch('/tests/testdocs/Scan_0002.pdf')).blob();
+                const dt = new DataTransfer();
+                dt.items.add(new File([b], 'Mail_Anhang.pdf', { type: 'application/pdf' }));
+                window.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, cancelable: true }));
+            }""")
+            await pg.wait_for_function("state.items.length === 2 && !state.busy", timeout=240000)
+            P.check("Stammordner bleibt verbunden", await pg.evaluate("state.dir !== null"))
+            r = await pg.evaluate("state.items.map(i => ({ d: i.name, ex: !!i.extern }))")
+            P.check("Zugezogene Datei ergänzt", any(x["d"] == "Mail_Anhang.pdf" and x["ex"] for x in r), r)
+            await pg.click("#apply"); await pg.wait_for_function("!state.busy")
+            fs = await pg.evaluate(LIST)
+            P.check("Externe Datei im Stammordner", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in fs, list(fs))
+            P.check("Scan_0005 verarbeitet", any("Krankenversicherung" in k for k in fs), list(fs))
+            logs = sorted(k for k in fs if k.startswith("Protokoll_"))
+            logtxt = await pg.evaluate("""async (n) => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('scans');
+                return await (await (await d.getFileHandle(n)).getFile()).text(); }""", logs[-1])
+            P.check("Hinweis im Protokoll", "Per Drag & Drop hinzugefügt" in logtxt)
+
             # C) Dateimodus (ZIP): Unterordner je Person als Pfade im ZIP
             await pg.goto(APP_FILE)
             await pg.check("#perperson")

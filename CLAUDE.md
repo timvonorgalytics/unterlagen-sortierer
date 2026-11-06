@@ -84,6 +84,12 @@ oder `applyZip()` (Ersatz ohne Ordnerzugriff, eigener ZIP-Schreiber ohne Kompres
   Browser-Neustart OHNE persistenten Speicher – `state.done` lebt bewusst nur im Arbeitsspeicher,
   denn Dateinamen sind Personendaten und dürfen nie in localStorage (Regel 2/localStorage-Regel).
   Zurückholen = Datei im Explorer aus `verarbeitet/` zurückziehen.
+- **Stammordner:** Der erste Ordner (gewählt oder gezogen) ist der Stammordner (`state.dir`). Danach
+  gezogene Dateien/Ordner ERGÄNZEN die Liste (`pickFiles` append, `addExternalDir` liest fremde Ordner
+  nur aus): `it.extern`, `partInfo` „Per Drag & Drop hinzugefügt“, Duplikat-Schutz über Liste +
+  `state.done`. Beim Speichern werden externe Dateien (kein `it.handle`) in den Stammordner
+  geschrieben („In den Ordner übernommen“); fremde Originale/Ordner werden NIE verändert.
+  „Ordner wählen“ wechselt den Stammordner (ersetzt die Liste).
 - **Bedienung:** Drag & Drop von Dateien oder einem Ordner aufs Fenster (`initDrop()`; ein Ordner kommt
   per `getAsFileSystemHandle` in den echten Ordnermodus). Filter „Nur zu prüfende anzeigen“
   (`applyRowFilter`, bewusst nur beim Neuzeichnen, damit Zeilen nicht beim Tippen verschwinden).

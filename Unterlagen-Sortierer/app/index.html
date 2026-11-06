@@ -726,7 +726,11 @@ function initDrop() {
     if (FS && items.length === 1 && typeof items[0].getAsFileSystemHandle === "function") {
       try {
         const h = await items[0].getAsFileSystemHandle();
-        if (h && h.kind === "directory") { await useDirectory(h); return; }
+        if (h && h.kind === "directory") {
+          // Erster Ordner wird Stammordner; weitere Ordner werden nur ausgelesen und ergänzt
+          if (state.dir) await addExternalDir(h); else await useDirectory(h);
+          return;
+        }
       } catch {}
     }
     const files = [...e.dataTransfer.files].filter((f) => EXT.test(f.name));
@@ -736,9 +740,28 @@ function initDrop() {
 }
 function pickFiles(files) {
   const items = [...files].filter((f) => EXT.test(f.name)).map((f) => ({ name: f.name, file: f }));
+  if (state.dir) {
+    // Es gibt schon einen Stammordner: zugezogene Dateien ERGÄNZEN die Liste.
+    // Gespeichert werden sie später in den Stammordner; ihre Originale bleiben, wo sie sind.
+    const have = new Set(state.items.map((i) => (i.originalName || i.name).toLowerCase()));
+    const add = items.filter((i) => !have.has(i.name.toLowerCase()) && !state.done.has(i.name.toLowerCase()));
+    add.forEach((it) => { it.extern = true; it.partInfo = "Per Drag & Drop hinzugefügt"; });
+    if (!add.length) { setStatus("Diese Dateien stehen schon in der Liste."); return; }
+    if (add.length < items.length) setStatus(`${items.length - add.length} ${items.length - add.length === 1 ? "Datei stand" : "Dateien standen"} schon in der Liste.`);
+    start(add, true);
+    return;
+  }
   state.dir = null;
   $("#folder").textContent = items.length + " Dateien ausgewählt";
   start(items);
+}
+/* Einen zugezogenen fremden Ordner nur AUSLESEN (nichts daran ändern) und die Dateien ergänzen */
+async function addExternalDir(dir) {
+  const files = [];
+  for await (const [name, h] of dir.entries())
+    if (h.kind === "file" && EXT.test(name) && !name.startsWith("~$")) files.push(await h.getFile());
+  if (!files.length) { setStatus("In diesem Ordner liegen keine PDF-, JPG- oder PNG-Dateien.", undefined, true); return; }
+  pickFiles(files);
 }
 async function start(items, append) {
   items.sort((a, b) => a.name.localeCompare(b.name, "de", { numeric: true }));
@@ -1279,11 +1302,12 @@ async function applyFolder(sel, log, now) {
         f = await folderFor(sub, await baseTarget.getDirectoryHandle(sub, { create: true }));
       }
       const newName = uniqueName(buildName(it), f.taken);
-      if (it.data) {
-        // Durch Teilen oder Zusammenführen neu erstellte Datei: immer neu schreiben
+      if (it.data || !it.handle) {
+        // Neu erstellte (Teilen/Zusammenführen) oder von außerhalb zugezogene Datei:
+        // in den Stammordner schreiben; ein fremdes Original wird nie angefasst
         const fh = await f.dir.getFileHandle(newName, { create: true });
-        const w = await fh.createWritable(); await w.write(it.data); await w.close();
-        it.appliedText = "Neu erstellt";
+        const w = await fh.createWritable(); await w.write(it.data ? it.data : await it.file.arrayBuffer()); await w.close();
+        it.appliedText = it.data ? "Neu erstellt" : "In den Ordner übernommen";
       } else if (mode === "kopie") {
         const fh = await f.dir.getFileHandle(newName, { create: true });
         const w = await fh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
