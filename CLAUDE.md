@@ -45,9 +45,16 @@ oder `applyZip()` (Ersatz ohne Ordnerzugriff, eigener ZIP-Schreiber ohne Kompres
   `stark` = 3 Punkte, `schwach` = 1; im Kopf der Seite (erste 450 Zeichen) ×1,5.
   „Sicher“ wenn ≥ 3 Punkte und ≥ 1,5× der Zweitplatzierte.
 - **findName (Reihenfolge):** Personenliste (CSV) → Vorgabe aus den Eingabefeldern → Formularfelder
-  („Name, Vorname:“, „Nachname:“, „Name:“ + „Vorname:“ auf Ausweisen) → Anschrift („Herrn/Frau“, auch allein
-  in einer Zeile mit Leerzeilen danach, „Herrn und Frau Hans und Erika …“). Zeilen mit Ansprechpartner,
-  Sachbearbeiter, Vermieter usw. (`NOT_PERSON`) und Namen direkt über „- Vermieter -“ werden übersprungen.
+  („Name, Vorname:“; „Familienname/Nachname“ und „Vorname(n)“ auch mit Wert in der NÄCHSTEN Zeile
+  (Formular-Tabellen) und mit zwei Vornamen; beschriftete Voll-Namen-Felder Mieter(in)/Patient(in)/
+  Kontoinhaber(in)/Versicherungsnehmer(in)) → Anschrift („Herrn/Frau“, auch allein in einer Zeile mit
+  Leerzeilen danach, „Herrn und Frau Hans und Erika …“, zwei Vornamen „Frau Helga Maria Brandt“ →
+  letztes Wort = Nachname, außer es ist eine Straße) → Absenderblock (Namenszeile direkt über
+  „Straße + Hausnummer“, keine Firmen/Behörden via `ORGA`) → Briefanrede („Sehr geehrte Frau X“, nur
+  Nachname). Zeilen mit Ansprechpartner, Sachbearbeiter, Vermieter usw. (`NOT_PERSON`) und Namen direkt
+  über „- Vermieter -“ werden übersprungen; `FELDWORT` verhindert, dass Beschriftungen („Vorname“,
+  „Geburtsdatum“) als Namen durchgehen. Quellen-Vertrauen: Formularfeld sicher, Anschrift/Absender/
+  Anrede unsicher („Bitte prüfen“). Fälle in `tests/test_namen.py` (direkt auf findName, ohne OCR).
 - **Manuelle Änderungen** stehen in `item.manual` und werden beim Neu-Auswerten nicht überschrieben.
 - **Teilen (Stapel-Scans):** Jede mehrseitige PDF hat „Teilen …“ → `openSplit()` liest ALLE Seiten
   (Textebene, sonst OCR), klassifiziert jede Seite und schlägt Trennstellen vor (`proposeCuts`: neuer

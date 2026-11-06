@@ -516,7 +516,12 @@ function classify(text) {
 const W = "[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+(?:-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+)?";
 const NOT_PERSON = /ansprechpartner|sachbearbeit|bearbeiter|zust[aä]ndig|gez\.|i\. ?a\.|telefon|durchwahl|e-mail|vermieter|geschäftsführ|vorstand|berater/i;
 const STOPWORDS = new Set(["und", "oder", "mit", "der", "die", "das", "den", "dem", "des", "von", "zu", "im", "in", "am", "an", "geb", "geboren", "sehr", "geehrte", "geehrter", "nr", "straße", "strasse", "str"]);
-function okWord(w) { return w && w.length > 1 && !STOPWORDS.has(w.toLowerCase()); }
+// Wörter, die wie ein Name aussehen, aber Feldbeschriftungen oder Adressteile sind
+const FELDWORT = /^(Name|Vorname|Vornamen|Nachname|Familienname|Geburtsname|Geburtsdatum|Geburtsort|Staatsangeh(?:ö|oe)rigkeit|Anschrift|Adresse|Wohnort)$/i;
+const STRASSE = /(?:weg|straße|strasse|gasse|allee|platz|ring|damm|ufer|markt|steig|hof)$/i;
+// Zeilen von Firmen/Behörden, die kein Absender-Personenname sind
+const ORGA = /sparkasse|bank\b|volksbank|stadtwerke|werke\b|gmbh|\bag\b|\bkg\b|kasse|amt\b|\bstadt\b|gemeinde|kreis\b|verwaltung|versicherung|fachbereich|fachdienst|abteilung|zentrum|praxis|kanzlei|verein|jobcenter|agentur/i;
+function okWord(w) { return w && w.length > 1 && !STOPWORDS.has(w.toLowerCase()) && !FELDWORT.test(w); }
 
 function findName(text) {
   const vN = $("#vNach").value.trim(), vV = $("#vVor").value.trim();
@@ -536,14 +541,20 @@ function findName(text) {
   // 3) Formularfelder
   let m = text.match(new RegExp("Name\\s*,\\s*Vorname[^\\S\\n]*:?[^\\S\\n]*(" + W + ")\\s*,\\s*(" + W + ")"));
   if (m && okWord(m[1]) && okWord(m[2])) return { nachname: titleCase(m[1]), vorname: titleCase(m[2]), src: "Formularfeld", sure: true };
-  const fn = text.match(new RegExp("(?:Familienname|Nachname)(?:\\s*\\(.*?\\))?[^\\S\\n]*:?[^\\S\\n]*(" + W + ")"))
+  // Beschriftung und Wert dürfen auch untereinander stehen (Formular-Tabellen), daher optional ein Zeilenumbruch
+  const fn = text.match(new RegExp("(?:Familienname|Nachname)(?:\\s*\\(.*?\\))?[^\\S\\n]*:?(?:[^\\S\\n]*\\n)?[^\\S\\n]*(" + W + ")"))
          || (/Vorname/.test(text) && text.match(new RegExp("(?:^|\\n)[^\\S\\n]*Name[^\\S\\n]*:[^\\S\\n]*(" + W + ")[^\\S\\n]*(?=\\n|$)")));
-  const vn = text.match(new RegExp("Vorname(?:\\(n\\)|n)?[^\\S\\n]*:?[^\\S\\n]*(" + W + ")"));
-  if (fn && okWord(fn[1])) return { nachname: titleCase(fn[1]), vorname: vn && okWord(vn[1]) ? titleCase(vn[1]) : "", src: "Formularfeld", sure: !!vn };
+  const vn = text.match(new RegExp("Vorname(?:\\(n\\)|n)?(?:\\s*\\(.*?\\))?[^\\S\\n]*:?(?:[^\\S\\n]*\\n)?[^\\S\\n]*(" + W + ")(?:[^\\S\\n]+(" + W + "))?"));
+  const vnText = vn && okWord(vn[1]) ? titleCase(vn[1]) + (vn[2] && okWord(vn[2]) ? " " + titleCase(vn[2]) : "") : "";
+  if (fn && okWord(fn[1])) return { nachname: titleCase(fn[1]), vorname: vnText, src: "Formularfeld", sure: !!vnText };
+  // Beschriftete Felder mit vollem Namen („Mieterin Helga Maria Brandt“, „Patientin: …“, „Kontoinhaber …“)
+  m = text.match(new RegExp("(?:^|[^A-Za-zäöüß])(?:Mieter(?:in)?|Patient(?:in)?|Kontoinhaber(?:in)?|Versicherungsnehmer(?:in)?)[^\\S\\n]*:?[^\\S\\n]*(" + W + ")(?:[^\\S\\n]+(" + W + "))?[^\\S\\n]+(" + W + ")"));
+  if (m && okWord(m[1]) && okWord(m[3]) && !STRASSE.test(m[3]))
+    return { nachname: titleCase(m[3]), vorname: titleCase(m[1]) + (m[2] && okWord(m[2]) ? " " + titleCase(m[2]) : ""), src: "Formularfeld", sure: true };
   // 4) Anschrift / Anrede: "Herrn" steht oft allein in einer Zeile, darunter der Name (auch mit Leerzeilen dazwischen)
   const SAL = "(?:Herrn|Herr|Frau)(?:\\s+und\\s+(?:Herrn|Herr|Frau))?";
   const t2 = text.replace(new RegExp("(^|\\n)[^\\S\\n]*(" + SAL + ")[^\\S\\n]*\\n\\s*", "g"), "$1$2 ");
-  const re = new RegExp("(?:^|[^A-Za-zäöüß])" + SAL + "\\s+(?:Dr\\.\\s*)?(" + W + ")(?:\\s+und\\s+" + W + ")?\\s+(" + W + ")");
+  const re = new RegExp("(?:^|[^A-Za-zäöüß])" + SAL + "\\s+(?:Dr\\.\\s*)?(" + W + ")(?:\\s+und\\s+" + W + ")?\\s+(" + W + ")(?:[^\\S\\n]+(" + W + "))?");
   const lines = t2.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -551,8 +562,28 @@ function findName(text) {
     const next = lines.slice(i + 1).find((l) => l.trim()) || "";
     if (NOT_PERSON.test(next) && next.trim().length < 40) continue;   // z. B. "- Vermieter -" unter der Zeile
     const a = re.exec(line);
-    if (a && okWord(a[1]) && okWord(a[2])) return { nachname: titleCase(a[2]), vorname: titleCase(a[1]), src: "Anschrift", sure: false };
+    if (a && okWord(a[1]) && okWord(a[2])) {
+      // Zwei Vornamen („Frau Helga Maria Brandt“): letztes Wort ist der Nachname – außer es ist eine Straße
+      if (a[3] && okWord(a[3]) && !STRASSE.test(a[3]))
+        return { nachname: titleCase(a[3]), vorname: titleCase(a[1]) + " " + titleCase(a[2]), src: "Anschrift", sure: false };
+      return { nachname: titleCase(a[2]), vorname: titleCase(a[1]), src: "Anschrift", sure: false };
+    }
   }
+  // 5) Absenderblock: Name allein in einer Zeile, direkt darüber von Straße + Hausnummer gefolgt
+  const reAbs = new RegExp("^(" + W + ")(?:[^\\S\\n]+(" + W + "))?[^\\S\\n]+(" + W + ")[^\\S\\n]*$");
+  const rawLines = text.split("\n");
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i].trim();
+    if (!line || NOT_PERSON.test(line) || ORGA.test(line)) continue;
+    const a = reAbs.exec(line);
+    if (!a || !okWord(a[1]) || !okWord(a[3]) || STRASSE.test(a[3])) continue;
+    const next = (rawLines.slice(i + 1).find((l) => l.trim()) || "").trim();
+    if (/(?:weg|straße|strasse|str\.|gasse|allee|platz|ring|damm|ufer)\s+\d{1,4}/i.test(next))
+      return { nachname: titleCase(a[3]), vorname: titleCase(a[1]) + (a[2] && okWord(a[2]) ? " " + titleCase(a[2]) : ""), src: "Absender", sure: false };
+  }
+  // 6) Briefanrede („Sehr geehrte Frau Brandt“) – nur Nachname
+  m = text.match(new RegExp("Sehr\\s+geehrte[rs]?\\s+(?:Frau|Herrn?)\\s+(?:Dr\\.\\s*)?(" + W + ")"));
+  if (m && okWord(m[1])) return { nachname: titleCase(m[1]), vorname: "", src: "Anrede", sure: false };
   return { nachname: "", vorname: "", src: "nicht gefunden", sure: false };
 }
 
