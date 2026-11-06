@@ -12,8 +12,12 @@ eine Internetverbindung ist nicht nötig.
 
 
 STARTEN
-  Doppelklick auf "Unterlagen-Sortierer starten".
-  Das Programm öffnet sich in Microsoft Edge.
+  Windows: Doppelklick auf "Unterlagen-Sortierer starten" (.bat).
+           Das Programm öffnet sich in Microsoft Edge.
+  macOS:   Doppelklick auf "Unterlagen-Sortierer starten.command".
+           Das Programm öffnet sich in Chrome bzw. Edge.
+           Beim allerersten Start ggf. Rechtsklick -> "Öffnen" wählen,
+           weil macOS heruntergeladene Programme zunächst blockiert.
 
 
 SO GEHT'S
@@ -45,6 +49,23 @@ SO GEHT'S
   Es lässt sich mit Excel öffnen und zeigt alte und neue Dateinamen.
 
 
+STAPEL-SCANS TEILEN
+  Stecken mehrere Dokumente in einer Datei (z. B. Antrag und
+  Kontoauszüge in einem Scan), zeigt die Zeile "Teilen ..." an.
+  Ein Klick öffnet alle Seiten als Vorschau. Das Programm schlägt
+  Trennstellen vor; ein Klick zwischen zwei Seiten setzt oder
+  entfernt eine Trennstelle. "In N Dateien teilen" erstellt für
+  jeden Abschnitt eine neue PDF-Datei mit eigenem Typ und Namen.
+  Das Original bleibt unverändert und wird nur abgewählt.
+
+DATEIEN ZUSAMMENFÜHREN
+  Gehören mehrere Dateien zusammen (z. B. einzeln gescannte Seiten
+  eines Kontoauszugs): nur diese Zeilen ankreuzen und unten auf
+  "Markierte zusammenführen" klicken. Es entsteht eine neue
+  PDF-Datei mit allen Seiten; auch Fotos (JPG/PNG) werden als
+  Seiten übernommen. Die Originale bleiben unverändert.
+  "Verwerfen" entfernt eine neu erstellte Datei wieder aus der Liste.
+
 PERSONENLISTE (optional)
   Eine CSV-Datei mit den Spalten Nachname;Vorname, z. B. aus Excel
   ("Speichern unter" -> "CSV (Trennzeichen-getrennt)").
@@ -65,6 +86,9 @@ AUSPROBIEREN
 WENN ETWAS NICHT KLAPPT
   - Das Programm öffnet sich nicht in Edge:
     Rechtsklick auf app\index.html -> "Öffnen mit" -> Microsoft Edge
+  - macOS meldet "kann nicht geöffnet werden":
+    Rechtsklick auf "Unterlagen-Sortierer starten.command" -> "Öffnen"
+    -> "Öffnen" bestätigen. Das ist nur beim ersten Start nötig.
   - "Dateien wählen" statt "Ordner wählen" wird angezeigt:
     Der Browser erlaubt keinen Ordnerzugriff. Die umbenannten Dateien
     werden dann als ZIP-Datei in den Download-Ordner gespeichert.

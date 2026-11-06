@@ -15,7 +15,7 @@ def _font(*cands):
     raise SystemExit("Keine passende Schrift gefunden: " + ", ".join(cands))
 F = _font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/System/Library/Fonts/Supplemental/Arial.ttf", "/Library/Fonts/Arial.ttf")
 FB = _font("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/Library/Fonts/Arial Bold.ttf")
-def scan(name, lines, rot=0.6, ext="pdf", noise=True):
+def _blatt(lines, rot, noise):
     W, H = 1654, 2339  # A4 @200 dpi
     im = Image.new("L", (W, H), 250); d = ImageDraw.Draw(im); y = 150
     for l in lines:
@@ -27,8 +27,18 @@ def scan(name, lines, rot=0.6, ext="pdf", noise=True):
         px = im.load()
         for _ in range(9000): px[random.randrange(W), random.randrange(H)] = random.choice([60, 120, 200])
         im = im.filter(ImageFilter.GaussianBlur(0.5))
+    return im
+
+def scan(name, lines, rot=0.6, ext="pdf", noise=True):
+    W, H = 1654, 2339
+    im = _blatt(lines, rot, noise)
     if ext == "pdf": im.convert("RGB").save(name, "PDF", resolution=200)
     else: im.convert("RGB").resize((W*3//4, H*3//4)).save(name, "JPEG", quality=70)
+
+def scan_mehrseitig(name, seiten, rot=0.5, noise=True):
+    """Stapel-Scan: mehrere Blätter in einer PDF (für die Funktion „Teilen“)."""
+    imgs = [_blatt(lines, rot, noise).convert("RGB") for lines in seiten]
+    imgs[0].save(name, "PDF", resolution=200, save_all=True, append_images=imgs[1:])
 
 scan("Scan_0001.pdf", ["#Antrag auf Leistungen der Grundsicherung", "#im Alter und bei Erwerbsminderung (SGB XII)", "",
   "1. Angaben zur antragstellenden Person", "Name, Vorname: Mustermann, Erika", "Geburtsdatum: 12.08.1955",
@@ -65,3 +75,18 @@ for i, l in enumerate(["Herrn", "Hans Mustermann", "Lindenweg 4", "12345 Musters
     c.drawString(70, 740 - i*16, l)
 c.save()
 open("personen.csv", "w", encoding="utf-8").write("Nachname;Vorname\nMustermann;Erika\nMustermann;Hans\nSchulz;Karin\n")
+
+# Stapel-Scan: Antrag (2 Seiten) und Kontoauszug (2 Seiten) in EINER Datei → zum Testen der Funktion „Teilen“
+scan_mehrseitig("Scan_0007_Stapel.pdf", [
+  ["#Antrag auf Leistungen der Grundsicherung", "#im Alter und bei Erwerbsminderung (SGB XII)", "",
+   "1. Angaben zur antragstellenden Person", "Name, Vorname: Mustermann, Erika", "Geburtsdatum: 12.08.1955",
+   "Anschrift: Lindenweg 4, 12345 Musterstadt", "", "Hiermit beantrage ich Leistungen nach dem SGB XII."],
+  ["#Abschnitt 3 - Einkommen", "", "Renteneinkommen: 840,55 EUR monatlich", "Sonstiges Einkommen: keines", "",
+   "Ich versichere die Richtigkeit der Angaben.", "Musterstadt, den 05.11.2026", "Unterschrift der Antragstellerin"],
+  ["#Sparkasse Musterstadt", "Frau", "Erika Mustermann", "Lindenweg 4", "12345 Musterstadt", "",
+   "#Kontoauszug 09/2026", "IBAN DE12 3456 7890 1234 5678 90", "Alter Kontostand vom 31.08.2026     389,70 EUR",
+   "Buchungstag  Wertstellung  Vorgang                    Betrag", "01.09.  01.09.  Lastschrift Miete            -520,00",
+   "15.09.  15.09.  Gutschrift Rente               +840,55", "Neuer Kontostand vom 30.09.2026     412,17 EUR"],
+  ["#Sparkasse Musterstadt - Seite 2", "Fortsetzung Kontoauszug 09/2026", "",
+   "Buchungstag  Wertstellung  Vorgang                    Betrag", "18.09.  18.09.  Lastschrift Strom             -62,00",
+   "22.09.  22.09.  Ueberweisung Apotheke             -18,40"]], rot=0.4)

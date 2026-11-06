@@ -5,10 +5,12 @@ from _gemeinsam import APP, DOCS, DOCS_DIR, Pruefer
 
 TYP = {"Foto_Ausweis.jpg": "Ausweis", "Rentenanpassung_digital.pdf": "Rentenanpassung", "Scan_0001.pdf": "Antrag",
        "Scan_0002.pdf": "Kontoauszug", "Scan_0003.pdf": "Mietvertrag", "Scan_0004.pdf": "Rentenbescheid",
-       "Scan_0005.pdf": "Krankenversicherung", "Scan_0006.pdf": "Nebenkostenabrechnung", "Scan_0008.pdf": "Sonstiges"}
+       "Scan_0005.pdf": "Krankenversicherung", "Scan_0006.pdf": "Nebenkostenabrechnung",
+       "Scan_0007_Stapel.pdf": "Antrag", "Scan_0008.pdf": "Sonstiges"}
 PERS = {"Foto_Ausweis.jpg": "Mustermann Erika", "Rentenanpassung_digital.pdf": "Mustermann Hans", "Scan_0001.pdf": "Mustermann Erika",
         "Scan_0002.pdf": "Mustermann Erika", "Scan_0003.pdf": "Mustermann Erika", "Scan_0004.pdf": "Mustermann Hans",
-        "Scan_0005.pdf": "Mustermann Erika", "Scan_0006.pdf": "Mustermann Hans", "Scan_0008.pdf": " "}
+        "Scan_0005.pdf": "Mustermann Erika", "Scan_0006.pdf": "Mustermann Hans",
+        "Scan_0007_Stapel.pdf": "Mustermann Erika", "Scan_0008.pdf": " "}
 P = Pruefer("Dateimodus")
 
 async def run(pg, setup_js=None, plist=None):
@@ -40,17 +42,17 @@ async def main():
             P.check(f"Liste {r['d']}", r['src'] == "Personenliste" and r['n'] in ("Mustermann Erika", "Mustermann Hans"), f"{r['n']} {r['src']}")
         P.check("Rentenbescheid → Hans", next(r for r in rows if r['d'] == "Scan_0004.pdf")['n'] == "Mustermann Hans")
         # D) manuelle Korrektur + ZIP
-        await pg.fill("tbody tr:nth-child(9) input.name >> nth=0", "Mustermann")
-        await pg.fill("tbody tr:nth-child(9) input.name >> nth=1", "Erika")
-        await pg.select_option("tbody tr:nth-child(9) select", "Kontoauszug")
-        P.check("Manuell korrigiert = sicher", await pg.evaluate("rowState(state.items[8])[0]") == "ok")
+        await pg.fill("tbody tr:nth-child(10) input.name >> nth=0", "Mustermann")
+        await pg.fill("tbody tr:nth-child(10) input.name >> nth=1", "Erika")
+        await pg.select_option("tbody tr:nth-child(10) select", "Kontoauszug")
+        P.check("Manuell korrigiert = sicher", await pg.evaluate("rowState(state.items[9])[0]") == "ok")
         await pg.click("tbody tr:nth-child(1) input[type=checkbox]")
         async with pg.expect_download() as dl:
             await pg.click("#apply")
         z = zipfile.ZipFile(io.BytesIO(open(await (await dl.value).path(), "rb").read()))
         names = z.namelist()
         P.check("ZIP gültig", z.testzip() is None)
-        P.check("8 Dateien + Protokoll", len(names) == 9, names)
+        P.check("9 Dateien + Protokoll", len(names) == 10, names)
         P.check("Abgewählte Datei fehlt", not any("Ausweis" in n for n in names))
         P.check("Doppelte Namen nummeriert", "Mustermann_Erika_Kontoauszug.pdf" in names and "Mustermann_Erika_Kontoauszug_2.pdf" in names, names)
         P.check("Inhalt unverändert", z.read("Mustermann_Erika_Antrag.pdf") == (DOCS_DIR / "Scan_0001.pdf").read_bytes())

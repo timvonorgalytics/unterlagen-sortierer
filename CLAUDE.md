@@ -21,7 +21,8 @@ Adminrechte. Ausgeliefert als ZIP, Start per Doppelklick auf eine .bat.
 
 ```
 Unterlagen-Sortierer/            ← das Auslieferungsprodukt (wird gezippt)
-  Unterlagen-Sortierer starten.bat   Start in Edge → Chrome → Standardbrowser (nur ASCII, CRLF!)
+  Unterlagen-Sortierer starten.bat       Windows: Start in Edge → Chrome → Standardbrowser (nur ASCII, CRLF!)
+  Unterlagen-Sortierer starten.command   macOS: Start in Chrome → Edge → Standardbrowser (LF, ausführbar!)
   regeln.js        Dokumenttypen + Suchbegriffe (vom Kunden-IT editierbar)  → window.REGELN
   marke.js         Name, Farben, Logo-SVG, Fußzeile                         → window.MARKE
   LIESMICH.txt, Hinweise fuer die IT.txt
@@ -48,6 +49,18 @@ oder `applyZip()` (Ersatz ohne Ordnerzugriff, eigener ZIP-Schreiber ohne Kompres
   in einer Zeile mit Leerzeilen danach, „Herrn und Frau Hans und Erika …“). Zeilen mit Ansprechpartner,
   Sachbearbeiter, Vermieter usw. (`NOT_PERSON`) und Namen direkt über „- Vermieter -“ werden übersprungen.
 - **Manuelle Änderungen** stehen in `item.manual` und werden beim Neu-Auswerten nicht überschrieben.
+- **Teilen (Stapel-Scans):** Jede mehrseitige PDF hat „Teilen …“ → `openSplit()` liest ALLE Seiten
+  (Textebene, sonst OCR), klassifiziert jede Seite und schlägt Trennstellen vor (`proposeCuts`: neuer
+  Abschnitt, sobald eine Seite *sicher* einen anderen Typ hat; unsichere Seiten bleiben beim Abschnitt).
+  Trennstellen per Klick änderbar. `doSplit()` erzeugt per **pdf-lib** je Abschnitt eine neue PDF als
+  Tabellenzeile (`item.data` = Bytes, `item.derived`, `item.partInfo`); das Original bleibt unverändert
+  und wird abgewählt. `analyse()` setzt `item.multiHint`, wenn die gelesenen Seiten sicher verschiedene
+  Typen haben → gelber Hinweis in der Typ-Spalte.
+- **Zusammenführen:** „Markierte zusammenführen“ (`mergeSelected()`, sichtbar ab 2 markierten Zeilen)
+  baut per pdf-lib eine PDF aus allen markierten Dateien in Listenreihenfolge; JPG/PNG werden als Seiten
+  eingebettet (`embedJpg`/`embedPng`). Originale bleiben, werden abgewählt. „Verwerfen“ entfernt eine
+  erzeugte Zeile wieder. Erzeugte Dateien (`item.data`) werden beim Speichern immer neu geschrieben
+  (auch im Modus „umbenennen“), Protokoll-Spalte „Hinweis“ nennt die Herkunft (Seiten/Quelldateien).
 - **Speichern:** nie überschreiben (`uniqueName` hängt `_2` an), Fremddateien im Ordner unberührt lassen,
   immer `Protokoll_<Zeit>.csv` (UTF-8 mit BOM, Semikolon → Excel-tauglich).
 - **localStorage** nur für Programmeinstellungen (Muster, Ablage, Seiten). Nie Namen oder Inhalte speichern.
@@ -77,7 +90,7 @@ oder `applyZip()` (Ersatz ohne Ordnerzugriff, eigener ZIP-Schreiber ohne Kompres
 ## Testen
 
 ```bash
-python3 -m pip install playwright pillow reportlab   # einmalig
+python3 -m pip install playwright pillow reportlab   # einmalig; unter Python 3.9: "reportlab<4.4"
 python3 -m playwright install chromium                # einmalig
 bash tests/alle_tests.sh                               # alle Tests (ca. 1–2 Minuten)
 python3 tests/test_dateimodus.py                       # einzelner Test
@@ -86,6 +99,7 @@ python3 tests/test_dateimodus.py                       # einzelner Test
 | Test | Prüft |
 | --- | --- |
 | test_dateimodus.py | Typ + Name aller Testunterlagen ohne Vorgabe, mit Vorgabe, mit Personenliste; manuelle Korrektur; ZIP-Export |
+| test_teilen.py | Stapel-Scan: Mehrtyp-Hinweis, Trennvorschlag, Trennstelle von Hand, Teilen (Typ/Name/Seitenzahl der Teile), ZIP + Protokoll-Hinweis; Zusammenführen PDF+JPG, Verwerfen |
 | test_ordnermodus.py | Kopien in „umbenannt“, Originale umbenennen, Ersatzweg ohne move(), keine Überschreibung, Fremddateien |
 | test_offline.py | läuft ohne Netz, null Netzanfragen |
 | test_ci.py | Farben/Name aus marke.js, Schriften offline, Logo-Einbau sicher; Screenshots in tests/screenshots |
@@ -109,5 +123,5 @@ für alle Kunden gleich. Kundenspezifische Dateien nicht in dieses Repo eincheck
 ## Offene Punkte
 
 - [ ] Orgalytics-Bildmarke in `marke.js` einsetzen
-- [ ] Erster Test auf echtem Windows-PC mit Edge
+- [ ] Erster Test auf echtem Windows-PC mit Edge und auf einem Mac (Doppelklick auf die .command)
 - [ ] Regeln mit echten (anonymisierten) Kundenbeispielen schärfen

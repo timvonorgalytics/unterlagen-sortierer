@@ -15,6 +15,13 @@ for f in "$PROG"/*.bat "$PROG"/*.txt "$PROG"/*.js "$PROG"/Beispiel-Scans/*.csv; 
 done
 if LC_ALL=C grep -n '[^[:print:][:space:]]' "$PROG"/*.bat; then echo "FEHLER: Nicht-ASCII-Zeichen in .bat"; exit 1; fi
 
+# macOS-Starter: LF-Zeilenenden und ausführbar (der Exec-Bit bleibt im ZIP erhalten)
+for f in "$PROG"/*.command; do
+  [ -f "$f" ] || continue
+  perl -pi -e 's/\r\n/\n/' "$f"
+  chmod +x "$f"
+done
+
 # Beispiel-Scans aktuell halten
 mkdir -p "$PROG/Beispiel-Scans"
 cp tests/testdocs/*.pdf tests/testdocs/*.jpg "$PROG/Beispiel-Scans/"
