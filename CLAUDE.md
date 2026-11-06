@@ -125,9 +125,13 @@ VERSION            Versionsnummer für das Release-ZIP
   `fullText(it)` = alle Seiten. `it.bgLock` verhindert, dass backgroundScan und copyAll dieselben
   Seiten doppelt lesen. Zweck: kompletten Text in den DSGVO-konformen KI-Assistenten der Kunden
   kopieren. Kopier-Knöpfe in der Vorschau und an „Erkannten Text anzeigen“ je Zeile.
-- **Zusammenführen:** Leiste ÜBER der Tabelle, sobald ≥ 2 Zeilen markiert sind („Zu einer PDF
-  zusammenführen“, `#selbar`/`mergeSelected()` – unten rechts bleibt NUR der Speichern-Knopf, Tims
-  UX-Regel). Baut per pdf-lib eine PDF aus allen markierten Dateien in Listenreihenfolge; JPG/PNG
+- **Zusammenführen:** Knopf „Zu einer PDF zusammenführen“ sitzt in der WERKZEUGLEISTE
+  (`#toolbar`, `position: sticky` – klebt beim Scrollen oben; enthält außerdem „Alle“-Haken
+  `#tball`, Markier-Zähler `#tbinfo` und das Namensfeld samt `#vApply`; gesperrt statt versteckt,
+  wenn < 2 markiert). Unten rechts bleibt NUR der Speichern-Knopf (Tims UX-Regel). Ebenso Tims
+  Struktur-Regel (v1.4.0): Kopfzeile und Einmal-Einstellungen (Ordner, Eingang, Muster) scrollen
+  weg, NUR die Werkzeugleiste pinnt; Datenschutz-Satz als Schild „100 % lokal“ mit title-Tooltip.
+  `mergeSelected()`: Baut per pdf-lib eine PDF aus allen markierten Dateien in Listenreihenfolge; JPG/PNG
   werden als Seiten eingebettet (`embedJpg`/`embedPng`). Quellen bleiben in der Liste, werden abgewählt
   und zeigen `mergedInto` („Zusammengeführt in …“). Hatten die Quellen verschiedene SICHERE Typen, wird
   das Ergebnis `typeSure=false` (gelb) statt still nach einer Datei benannt. „Verwerfen“ entfernt eine
@@ -162,7 +166,10 @@ VERSION            Versionsnummer für das Release-ZIP
   geschrieben („In den Ordner übernommen“); fremde Originale/Ordner werden NIE verändert.
   „Ordner wählen“ wechselt den Stammordner (ersetzt die Liste).
 - **Bedienung:** Drag & Drop von Dateien oder einem Ordner aufs Fenster (`initDrop()`; ein Ordner kommt
-  per `getAsFileSystemHandle` in den echten Ordnermodus). Filter „Nur zu prüfende anzeigen“
+  per `getAsFileSystemHandle` in den echten Ordnermodus). Shift-Klick auf ein Kästchen markiert
+  die ganze Reihe seit dem zuletzt angeklickten (`state.lastSel`; ein Haken bedeutet weiterhin
+  BEIDES: wird gespeichert UND Ziel für Benennen/Zusammenführen – bewusst EIN Konzept).
+  Filter „Nur zu prüfende anzeigen“
   (`applyRowFilter`, bewusst nur beim Neuzeichnen, damit Zeilen nicht beim Tippen verschwinden).
   „Erkennungsregeln“ (Kopfzeile) öffnet die Read-only-Ansicht aller Typen/Begriffe (`openRules()`).
 - **localStorage** nur für Programmeinstellungen (Dateinamen-Muster, Stempel an/aus, Ansicht

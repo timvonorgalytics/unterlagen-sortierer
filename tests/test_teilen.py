@@ -84,14 +84,15 @@ async def main():
         await pg.goto(APP)
         await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0002.pdf"), str(DOCS_DIR / "Foto_Ausweis.jpg")])
         await pg.wait_for_function("state.items.length === 2 && !state.busy", timeout=240000)
-        P.check("Zusammenführen-Leiste sichtbar", await pg.is_visible("#merge") and "2 Dateien markiert" in await pg.inner_text("#selinfo"))
+        P.check("Werkzeugleiste zeigt Markierung", await pg.is_visible("#merge") and not await pg.evaluate("$('#merge').disabled")
+                and "2 Dateien markiert" in await pg.inner_text("#tbinfo"))
         await pg.click("#merge")  # confirm() wird automatisch bestätigt
         await pg.wait_for_function("state.items.length === 3 && !state.busy", timeout=240000)
         m = await pg.evaluate("state.items.map(i => ({ n: i.name, pg: i.pages, d: !!i.derived, sel: i.selected, mi: i.mergedInto || '', sure: !!i.typeSure }))")
         P.check("Neue Gesamt-PDF", m[2]['d'] and m[2]['pg'] == 2 and m[2]['n'].endswith("_gesamt.pdf"), m)
         P.check("Originale abgewählt und gekennzeichnet", not m[0]['sel'] and not m[1]['sel'] and m[0]['mi'] == m[2]['n'] and m[1]['mi'] == m[2]['n'], m)
         P.check("Mischtypen → bitte prüfen", m[2]['sure'] is False, m[2])
-        P.check("Leiste nach Zusammenführen weg", not await pg.is_visible("#merge"))
+        P.check("Zusammenführen danach gesperrt (nur 1 markiert)", await pg.evaluate("$('#merge').disabled"))
         async with pg.expect_download() as dl:
             await pg.click("#apply")
         z2 = zipfile.ZipFile(io.BytesIO(open(await (await dl.value).path(), "rb").read()))

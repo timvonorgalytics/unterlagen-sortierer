@@ -50,6 +50,12 @@ async def main():
         P.check("Rückfrage vor dem Überschreiben", len(dialogs) == 1 and "schon einen Namen" in dialogs[0], dialogs)
         P.check("Abbrechen lässt Namen stehen", await pg.evaluate(
             "state.items.filter(i => i.nachname === 'Beispiel').length") == 1)
+        # Shift-Klick markiert eine ganze Reihe
+        await pg.evaluate("setAllSelected(false)")
+        await pg.click("tbody tr:nth-child(2) input[type=checkbox]")
+        await pg.click("tbody tr:nth-child(6) input[type=checkbox]", modifiers=["Shift"])
+        P.check("Shift-Klick markiert die Reihe", await pg.evaluate("state.items.filter(i => i.selected).length") == 5)
+        P.check("Werkzeugleiste zählt mit", "5 Dateien markiert" in await pg.inner_text("#tbinfo"))
         # C) manuelle Korrektur + ZIP (frischer Lauf ohne Namensfeld)
         rows = await run(pg)
         await pg.fill("tbody tr:nth-child(10) input.name >> nth=0", "Mustermann")

@@ -2,6 +2,24 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.4.0 – 2026-11-07
+
+Neue Werkzeugleiste für die Arbeit mit vielen Dokumenten – abgestimmt
+mit dem Service Point:
+
+- **Werkzeugleiste klebt oben:** „Alle“ an/aus, die Zahl der markierten
+  Zeilen, das Namensfeld samt „In markierte Zeilen eintragen“ und
+  „Zu einer PDF zusammenführen“ bleiben beim Rollen durch lange Listen
+  immer sichtbar. So lässt sich eine Dokumenten-Reihe nach der anderen
+  benennen, ohne nach oben zu scrollen.
+- **Shift-Klick markiert eine ganze Reihe:** erstes Kästchen anklicken,
+  letztes mit gedrückter Shift-Taste – alles dazwischen wird
+  mitmarkiert (wie im Datei-Explorer).
+- **Aufgeräumte Kopfzeile:** Der Datenschutz-Satz ist jetzt ein
+  Schild-Symbol „100 % lokal“ – der volle Satz erscheint beim
+  Daraufzeigen. Die Einmal-Einstellungen (Ordner, Eingang, Dateiname)
+  behalten ihren Platz oben und scrollen mit aus dem Bild.
+
 ## 1.3.1 – 2026-11-06
 
 - **„Text kopieren“ kopiert immer das ganze Dokument:** Sind noch nicht

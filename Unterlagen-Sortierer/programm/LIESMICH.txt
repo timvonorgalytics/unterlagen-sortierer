@@ -32,10 +32,17 @@ SO GEHT'S
   2. Das Programm liest die Dateien und erkennt je Dokument den Typ
      und den Namen - auch wenn Unterlagen mehrerer Personen gemischt
      im Ordner liegen.
-     Gehören alle Scans zur selben Person: Namen oben eintragen und
-     auf "In markierte Zeilen eintragen" klicken - erst der Klick
-     übernimmt ihn in die angekreuzten Zeilen, beim Tippen passiert
-     nichts. Schon vorhandene Namen werden nur nach Rückfrage geändert.
+     Die WERKZEUGLEISTE bleibt beim Rollen durch die Liste immer
+     oben sichtbar: "Alle" an/aus, die Zahl der markierten Zeilen,
+     das Namensfeld und "Zu einer PDF zusammenführen".
+     Namen fuer eine ganze Dokumenten-Reihe: Zeilen ankreuzen
+     (Shift-Klick markiert alles vom zuletzt angeklickten bis zum
+     jetzigen Kästchen), Namen eintippen, "In markierte Zeilen
+     eintragen" klicken - erst der Klick übernimmt ihn, beim Tippen
+     passiert nichts. Schon vorhandene Namen werden nur nach
+     Rückfrage geändert. So lassen sich erst die Scans von Person A
+     markieren und benennen, dann die von Person B - ohne Scrollen
+     nach oben.
 
   3. Liste prüfen:
        Grün  "Sicher"        -> Vorschlag ist eindeutig
@@ -105,8 +112,8 @@ STAPEL-SCANS SORTIEREN UND TEILEN
 
 DATEIEN ZUSAMMENFÜHREN
   Gehören mehrere Dateien zusammen (z. B. einzeln gescannte Seiten
-  eines Kontoauszugs): nur diese Zeilen ankreuzen. Über der Liste
-  erscheint dann "Zu einer PDF zusammenführen". Es entsteht eine
+  eines Kontoauszugs): nur diese Zeilen ankreuzen und in der
+  Werkzeugleiste "Zu einer PDF zusammenführen" klicken. Es entsteht eine
   neue PDF-Datei mit allen Seiten; auch Fotos (JPG/PNG) werden als
   Seiten übernommen. Die Originale bleiben unverändert in der Liste
   und zeigen, in welche Datei sie eingeflossen sind; nach dem

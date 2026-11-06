@@ -209,13 +209,21 @@ details pre {
 .actions .summary b { font-weight: 650; }
 .hidden { display: none !important; }
 
-/* Leiste über der Tabelle, sobald mehrere Zeilen markiert sind */
-.selbar {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line));
-  border-radius: 3px; padding: 8px 14px; margin: 0 0 10px;
+/* Werkzeugleiste: klebt beim Scrollen oben am Fensterrand */
+.toolbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 9px 32px; background: var(--sheet); border-bottom: 1px solid var(--line);
 }
-.selbar span { font-size: 14px; }
+.toolbar input[type=text] {
+  border: 1px solid var(--line); background: var(--sheet); border-radius: 3px;
+  padding: 6px 10px; width: 150px; min-width: 0;
+}
+.toolbar input[type=text]:hover { border-color: var(--muted); }
+.tbinfo { font-size: 13.5px; font-weight: 600; min-width: 88px; }
+.tbsep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 4px; }
+.tbhint { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+@media (max-width: 1100px) { .tbhint { display: none; } }
 
 /* Ziehen und Ablegen */
 body.drag .empty { border-color: var(--accent); background: var(--accent-soft); }
@@ -318,9 +326,10 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <span class="logo" id="logo"></span>
     <div><h1 id="produkt">Unterlagen-Sortierer</h1><span class="by" id="firma">von Orgalytics</span></div>
   </div>
-  <span class="safe">
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Zm-1 10L4.3 8.3l1.1-1.1L7 8.8l3.6-3.6 1.1 1.1L7 11Z"/></svg>
-    Alles wird auf diesem Rechner verarbeitet. Es werden keine Daten übertragen.
+  <span class="safe" title="Alles wird auf diesem Rechner verarbeitet. Es werden keine Daten übertragen."
+    aria-label="Alles wird auf diesem Rechner verarbeitet. Es werden keine Daten übertragen." tabindex="0">
+    <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Zm-1 10L4.3 8.3l1.1-1.1L7 8.8l3.6-3.6 1.1 1.1L7 11Z"/></svg>
+    100&nbsp;% lokal
   </span>
   <button class="btn" id="theme" title="Zwischen heller und dunkler Ansicht wechseln">Dunkle Ansicht</button>
   <button class="btn" id="rules">Erkennungsregeln</button>
@@ -336,15 +345,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   </div>
 
   <div>
-    <span class="label">Name für die markierten Dateien</span>
-    <div class="field">
-      <input type="text" id="vNach" placeholder="Nachname" autocomplete="off" aria-label="Nachname für markierte Dateien">
-      <input type="text" id="vVor" placeholder="Vorname" autocomplete="off" aria-label="Vorname für markierte Dateien">
-      <button class="btn" id="vApply" disabled>In markierte Zeilen eintragen</button>
-    </div>
-    <p class="hint">Erst der Klick trägt den Namen ein – praktisch, wenn alle Scans zur selben Person gehören.
-      Beim Tippen ändert sich nichts; schon vorhandene Namen werden nur nach Rückfrage geändert.</p>
-    <span class="label" style="margin-top:14px">Eingang</span>
+    <span class="label">Eingang</span>
     <div class="field">
       <input type="date" id="eingang" aria-label="Eingangsdatum">
       <label class="onlycheck"><input type="checkbox" id="stempel"> Eingangsstempel auf die Kopien</label>
@@ -364,6 +365,20 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   </div>
 </section>
 
+<!-- Werkzeugleiste: klebt beim Scrollen oben – alles, was man je Dokumenten-Gruppe braucht -->
+<div class="toolbar hidden" id="toolbar">
+  <label class="onlycheck"><input type="checkbox" id="tball" checked aria-label="Alle Zeilen markieren"> Alle</label>
+  <span class="tbinfo" id="tbinfo"></span>
+  <input type="text" id="vNach" placeholder="Nachname" autocomplete="off" aria-label="Nachname für markierte Dateien">
+  <input type="text" id="vVor" placeholder="Vorname" autocomplete="off" aria-label="Vorname für markierte Dateien">
+  <button class="btn" id="vApply" disabled
+    title="Erst der Klick trägt den Namen in alle markierten Zeilen ein – vorhandene Namen werden nur nach Rückfrage geändert">In markierte Zeilen eintragen</button>
+  <span class="tbsep" aria-hidden="true"></span>
+  <button class="btn" id="merge" disabled
+    title="Die markierten Dateien in Listenreihenfolge zu einer PDF-Datei verbinden">Zu einer PDF zusammenführen</button>
+  <span class="tbhint">Tipp: Shift-Klick markiert eine ganze Reihe.</span>
+</div>
+
 <div class="status" id="status" aria-live="polite"></div>
 
 <main class="list" id="list">
@@ -372,10 +387,6 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <h2>Unterlagen <em>wirksam</em> sortieren.</h2>
     <p>Wählen Sie den Ordner mit den eingescannten Unterlagen – oder ziehen Sie Dateien bzw. einen Ordner einfach hierher.</p>
     <p class="sub">Das Programm erkennt Dokumenttyp und Person. Sie prüfen jeden Vorschlag, bevor etwas umbenannt wird.</p>
-  </div>
-  <div class="selbar hidden" id="selbar">
-    <span id="selinfo"></span>
-    <button class="btn" id="merge">Zu einer PDF zusammenführen</button>
   </div>
   <div class="tablewrap hidden" id="tablewrap">
     <table>
@@ -1502,6 +1513,7 @@ function render() {
   $("#empty").classList.toggle("hidden", has);
   $("#tablewrap").classList.toggle("hidden", !has);
   $("#actions").classList.toggle("hidden", !has);
+  $("#toolbar").classList.toggle("hidden", !has);
   const tb = $("#rows"); tb.innerHTML = "";
   for (const it of state.items) { it.tr = document.createElement("tr"); tb.appendChild(it.tr); renderRow(it); }
   updateActions();
@@ -1513,8 +1525,21 @@ function renderRow(it) {
   const td = (cls) => { const d = document.createElement("td"); if (cls) d.className = cls; tr.appendChild(d); return d; };
   const ready = it.status === "done";
 
-  const c1 = td("sel"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = it.selected; cb.setAttribute("aria-label", "Datei " + it.name + " einbeziehen");
-  cb.onchange = () => { it.selected = cb.checked; tr.classList.toggle("skip", !it.selected); updateActions(); }; c1.appendChild(cb);
+  const c1 = td("sel"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = it.selected;
+  cb.setAttribute("aria-label", "Datei " + it.name + " einbeziehen"); cb.title = "Mit Shift-Klick bis hierher markieren";
+  cb.onclick = (e) => {
+    const idx = state.items.indexOf(it);
+    if (e.shiftKey && state.lastSel != null && state.lastSel !== idx) {
+      // Shift-Klick: ganze Reihe bis zur zuletzt angeklickten Zeile gemeinsam umschalten
+      const [a, b] = [Math.min(idx, state.lastSel), Math.max(idx, state.lastSel)];
+      for (let i = a; i <= b; i++) { const o = state.items[i]; o.selected = cb.checked; renderRow(o); }
+    } else {
+      it.selected = cb.checked; tr.classList.toggle("skip", !it.selected);
+    }
+    state.lastSel = idx;
+    updateActions();
+  };
+  c1.appendChild(cb);
 
   const c2 = td("thumb"); const tb = document.createElement("button"); tb.className = "thumbbox"; tb.title = "Vorschau öffnen"; tb.setAttribute("aria-label", "Vorschau von " + it.name + " öffnen");
   if (it.thumb) { const im = document.createElement("img"); im.src = it.thumb; im.alt = ""; tb.appendChild(im); }
@@ -1601,11 +1626,20 @@ function updateActions() {
   $("#summary").innerHTML = t + ".";
   $("#apply").textContent = !state.dir ? "Als ZIP-Datei speichern" : "Umbenannte Kopien speichern";
   $("#apply").disabled = state.busy || sel.length === 0;
-  $("#vApply").disabled = state.busy || !$("#vNach").value.trim();
-  const mergeOk = !state.busy && sel.length >= 2 && !!window.PDFLib;
-  $("#selbar").classList.toggle("hidden", !mergeOk);
-  if (mergeOk) $("#selinfo").textContent = `${sel.length} Dateien markiert –`;
+  $("#vApply").disabled = state.busy || !$("#vNach").value.trim() || !sel.length;
+  $("#merge").disabled = state.busy || sel.length < 2 || !window.PDFLib;
+  $("#tbinfo").textContent = `${sel.length} ${sel.length === 1 ? "Datei" : "Dateien"} markiert`;
+  const wählbar = state.items.filter((i) => i.status === "done");
+  for (const cb of [$("#all"), $("#tball")]) {
+    cb.checked = wählbar.length > 0 && sel.length === wählbar.length;
+    cb.indeterminate = sel.length > 0 && sel.length < wählbar.length;
+  }
   $("#rescan").hidden = !state.dir || state.busy;
+}
+function setAllSelected(checked) {
+  state.items.forEach((i) => { i.selected = checked; renderRow(i); });
+  state.lastSel = null;
+  updateActions();
 }
 
 /* ---------- Umbenennen ---------- */
@@ -1880,7 +1914,8 @@ function init() {
   $("#eingang").onchange = () => state.items.forEach(updatePreview);
   $("#stempel").checked = store.get("stempel", "0") === "1";
   $("#stempel").onchange = () => store.set("stempel", $("#stempel").checked ? "1" : "0");
-  $("#all").onchange = (e) => { state.items.forEach((i) => { i.selected = e.target.checked; renderRow(i); }); updateActions(); };
+  $("#all").onchange = (e) => setAllSelected(e.target.checked);
+  $("#tball").onchange = (e) => setAllSelected(e.target.checked);
   $("#apply").onclick = apply;
   $("#onlycheck").onchange = () => state.items.forEach(applyRowFilter);
   initDrop();
