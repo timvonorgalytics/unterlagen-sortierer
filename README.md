@@ -62,9 +62,16 @@ Die gesamte Oberfläche und Logik steckt in `Unterlagen-Sortierer/app/index.html
 mit `tools/bibliotheken_bauen.sh` aus festgepinnten npm-Paketen erzeugt.
 Entwicklungs-Leitfaden: [CLAUDE.md](CLAUDE.md) · Änderungen: [CHANGELOG.md](CHANGELOG.md)
 
-## Lizenz
+## Lizenz und Dank
 
 [MIT](LICENSE) © 2026 Orgalytics · Kontakt: office@orgalytics.de
 
-Eingebettete Bibliotheken und Schriften (pdf.js, Tesseract.js, pdf-lib, Geist, Lora)
-stehen unter eigenen freien Lizenzen — siehe `Unterlagen-Sortierer/app/lib/lizenzen/`.
+Der Unterlagen-Sortierer steht auf den Schultern großartiger Open-Source-Projekte —
+herzlichen Dank an [pdf.js](https://mozilla.github.io/pdf.js/) (Mozilla),
+[Tesseract.js](https://github.com/naptha/tesseract.js) und
+[Tesseract](https://github.com/tesseract-ocr/tesseract),
+[pdf-lib](https://pdf-lib.js.org/) sowie die Schriften
+[Geist](https://vercel.com/font) (Vercel) und
+[Lora](https://github.com/cyrealtype/Lora-Cyreal) (Cyreal).
+Die zugehörigen Lizenztexte liegen in `Unterlagen-Sortierer/app/lib/lizenzen/`
+und werden mit jeder Auslieferung mitgegeben.
