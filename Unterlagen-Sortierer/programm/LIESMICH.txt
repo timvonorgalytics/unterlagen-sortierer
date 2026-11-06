@@ -45,9 +45,11 @@ SO GEHT'S
      Ein Klick auf das kleine Vorschaubild öffnet eine Vorschau im
      selben Fenster: Pfeiltasten links/rechts blättern die Seiten,
      hoch/runter springen zum vorherigen bzw. nächsten Dokument.
-     "Text kopieren" legt den erkannten Text in die Zwischenablage
-     (z. B. zum Einfügen in einen DSGVO-konformen KI-Assistenten)
-     und bestätigt kurz mit "Kopiert"; "In neuem Fenster öffnen"
+     "Text kopieren" legt den erkannten Text ALLER Seiten in die
+     Zwischenablage (z. B. zum Einfügen in einen DSGVO-konformen
+     KI-Assistenten). Sind noch nicht alle Seiten gelesen, holt der
+     Knopf das zuerst nach ("Gesamtes Dokument wird gelesen ...")
+     und bestätigt dann mit "Kopiert". "In neuem Fenster öffnen"
      zeigt die Originaldatei. Der Kopier-Knopf steht auch unter
      "Erkannten Text anzeigen" in jeder Zeile.
      Verdreht eingescannte Seiten (Blatt quer oder kopfüber im

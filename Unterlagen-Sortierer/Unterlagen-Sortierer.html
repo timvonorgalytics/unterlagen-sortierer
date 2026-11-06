@@ -961,6 +961,19 @@ function surePageTypes(it) {
    damit der Teilen-Dialog sofort klassifizierte Seiten vorfindet und der Mehrtyp-Hinweis
    auch bei langen Stapeln erscheint. Ändert NIE Typ oder Name bereits angezeigter Zeilen.
    Pausiert, während gespeichert wird oder der Teilen-Dialog offen ist. */
+// Eine Seite lesen: Textebene → leere Seite → Texterkennung (mit Dreh-Erkennung)
+async function readPageText(doc, p) {
+  const page = await doc.getPage(p);
+  const tc = await page.getTextContent();
+  let t = tc.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join(""), rot = 0, ocrUsed = false;
+  if (t.replace(/\s/g, "").length < 40) {
+    const canvas = await renderPage(page, ocrScale(page));
+    if (inkRatio(canvas) < 0.004) t = "";
+    else { const r = await ocrSmart(canvas); t = r.text; rot = r.rot; ocrUsed = true; }
+  }
+  page.cleanup();
+  return { t, rot, ocrUsed };
+}
 async function backgroundScan() {
   if (state.bgRunning) return;
   state.bgRunning = true;
@@ -970,22 +983,15 @@ async function backgroundScan() {
       if (state.busy || $("#splitdlg").open) break;
       if (!state.items.includes(it) || it.status !== "done" || !/\.pdf$/i.test(it.name)) continue;
       const max = Math.min(it.pages || 0, 40);
-      if (!it.pageTexts || (it.pagesRead || 0) >= max) continue;
+      if (!it.pageTexts || (it.pagesRead || 0) >= max || it.bgLock) continue;
+      it.bgLock = true;   // verhindert, dass „Text kopieren“ dieselben Seiten gleichzeitig liest
       const doc = await pdfjs.getDocument({ data: (await fileBytes(it)).slice(), isEvalSupported: false }).promise;
       try {
         for (let p = (it.pagesRead || 0) + 1; p <= max; p++) {
           if (state.busy || $("#splitdlg").open || !state.items.includes(it) || it.status !== "done") break;
-          const page = await doc.getPage(p);
-          const tc = await page.getTextContent();
-          let t = tc.items.map((i) => i.str + (i.hasEOL ? "\n" : " ")).join("");
-          let rot = 0;
-          if (t.replace(/\s/g, "").length < 40) {
-            const canvas = await renderPage(page, ocrScale(page));
-            if (inkRatio(canvas) < 0.004) t = "";
-            else { const r = await ocrSmart(canvas); t = r.text; rot = r.rot; it.ocr = true; }
-          }
-          page.cleanup();
-          it.pageTexts.push(t); (it.pageRot || (it.pageRot = []))[p - 1] = rot; it.pagesRead = p;
+          const r = await readPageText(doc, p);
+          if (r.ocrUsed) it.ocr = true;
+          it.pageTexts.push(r.t); (it.pageRot || (it.pageRot = []))[p - 1] = r.rot; it.pagesRead = p;
           // Mehrtyp-Hinweis nachziehen (ohne eine Zeile zu stören, in der gerade getippt wird)
           if (!it.multiHint) {
             const sure = new Set(surePageTypes(it).filter((c) => c.sure).map((c) => c.type));
@@ -995,10 +1001,33 @@ async function backgroundScan() {
             }
           }
         }
-      } finally { await doc.destroy(); }
+      } finally { await doc.destroy(); it.bgLock = false; }
     }
   } catch (e) { console.error(e); }
   state.bgRunning = false;
+}
+/* Gesamter erkannter Text eines Dokuments (alle bisher gelesenen Seiten) */
+function fullText(it) {
+  return (it.pageTexts && it.pageTexts.length ? it.pageTexts.join("\n") : it.text) || "";
+}
+/* Fürs Kopieren fehlende Seiten SOFORT nachlesen – ohne die 40-Seiten-Kappe,
+   damit wirklich das ganze Dokument in die Zwischenablage kommt. */
+async function readRemaining(it, onProgress) {
+  if (!/\.pdf$/i.test(it.name) || !it.pageTexts) return;
+  while (it.bgLock) await new Promise((r) => setTimeout(r, 200));   // Hintergrund-Lesen abwarten
+  if ((it.pagesRead || 0) >= (it.pages || 0)) return;
+  it.bgLock = true;
+  const pdfjs = await pdfLib();
+  const doc = await pdfjs.getDocument({ data: (await fileBytes(it)).slice(), isEvalSupported: false }).promise;
+  try {
+    for (let p = (it.pagesRead || 0) + 1; p <= it.pages; p++) {
+      if (onProgress) onProgress(p, it.pages);
+      const r = await readPageText(doc, p);
+      if (r.ocrUsed) it.ocr = true;
+      it.pageTexts.push(r.t); (it.pageRot || (it.pageRot = []))[p - 1] = r.rot; it.pagesRead = p;
+    }
+    it.text = fullText(it);
+  } finally { await doc.destroy(); it.bgLock = false; }
 }
 
 /* ---------- Teilen und Zusammenführen ---------- */
@@ -1377,6 +1406,18 @@ async function copyText(t, btn) {
     setTimeout(() => { btn.textContent = btn.dataset.alt; delete btn.dataset.alt; btn.classList.remove("copied"); }, 1600);
   }
 }
+/* „Text kopieren“: liest zuerst noch fehlende Seiten nach, damit IMMER das
+   ganze Dokument in der Zwischenablage landet (z. B. für den KI-Assistenten). */
+async function copyAll(it, btn) {
+  if (/\.pdf$/i.test(it.name) && (it.pagesRead || 0) < (it.pages || 0)) {
+    const alt = btn.textContent; btn.disabled = true;
+    btn.textContent = "Gesamtes Dokument wird gelesen …";
+    try { await readRemaining(it, (p, n) => setStatus(`Gesamtes Dokument wird gelesen – Seite ${p} von ${n} …`, p / n)); }
+    catch (e) { console.error(e); setStatus("Einige Seiten konnten nicht gelesen werden – kopiert wird der bisher erkannte Text.", undefined, true); }
+    btn.textContent = alt; btn.disabled = false;
+  }
+  copyText(fullText(it), btn);
+}
 const pv = { it: null, page: 1, doc: null, url: null, seq: 0 };
 async function openPreview(it) {
   closePreview();                         // ggf. noch offene/ladende Vorschau sauber beenden
@@ -1527,8 +1568,9 @@ function renderRow(it) {
   if (ready && it.text) {
     const d = document.createElement("details"); const s = document.createElement("summary"); s.textContent = "Erkannten Text anzeigen";
     const cp = document.createElement("button"); cp.className = "btn mini"; cp.textContent = "Text kopieren";
-    cp.title = "Den gesamten erkannten Text in die Zwischenablage kopieren"; cp.onclick = () => copyText(it.text, cp);
-    const pre = document.createElement("pre"); pre.textContent = it.text.trim().slice(0, 1500) || "(kein Text erkannt)";
+    cp.title = "Den Text ALLER Seiten in die Zwischenablage kopieren (fehlende Seiten werden erst nachgelesen)";
+    cp.onclick = () => copyAll(it, cp);
+    const pre = document.createElement("pre"); pre.textContent = fullText(it).trim().slice(0, 1500) || "(kein Text erkannt)";
     d.append(s, cp, pre); c7.appendChild(d);
   }
 
@@ -1860,7 +1902,7 @@ function init() {
   $("#preview").onclick = (e) => { if (e.target === $("#preview")) closePreview(); };
   $("#pvprev").onclick = () => { if (pv.doc && pv.page > 1) { pv.page--; pvRender(); } };
   $("#pvnext").onclick = () => { if (pv.doc && pv.page < pv.doc.numPages) { pv.page++; pvRender(); } };
-  $("#pvcopy").onclick = () => pv.it && copyText(pv.it.text, $("#pvcopy"));
+  $("#pvcopy").onclick = () => pv.it && copyAll(pv.it, $("#pvcopy"));
   $("#pvrot").onclick = async () => {
     if (!pv.it) return;
     const i = pv.doc ? pv.page - 1 : 0;

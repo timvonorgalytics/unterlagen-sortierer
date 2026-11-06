@@ -30,10 +30,14 @@ async def main():
         await pg.click("#pvnext")
         await pg.wait_for_function("document.querySelector('#pvpage').textContent.includes('Seite 2 von 5')", timeout=60000)
         P.check("Blättern funktioniert", True)
-        await pg.evaluate("document.execCommand = () => true")  # Headless-Zwischenablage abfangen
+        # Kopieren liest fehlende Seiten nach und kopiert ALLE Seiten (für den KI-Assistenten)
+        await pg.evaluate("""window.__kopiert = ""; navigator.clipboard.writeText = async (t) => { window.__kopiert = t; };
+            const it = state.items[0]; it.pageTexts = it.pageTexts.slice(0, 2); it.pagesRead = 2;  // als wäre noch nicht fertig gelesen""")
         await pg.click("#pvcopy")
-        await pg.wait_for_function("document.querySelector('#status').textContent.includes('Zwischenablage')", timeout=10000)
-        P.check("Kopieren meldet sich", True)
+        await pg.wait_for_function("document.querySelector('#status').textContent.includes('Zwischenablage')", timeout=240000)
+        P.check("Kopieren liest Rest nach", await pg.evaluate("state.items[0].pagesRead === state.items[0].pages"))
+        P.check("Alle Seiten in der Zwischenablage", await pg.evaluate("__kopiert.includes('Kontoauszug 09/2026') && __kopiert.includes('Antrag')"))
+        P.check("Knopf bestätigt sichtbar", await pg.evaluate("document.querySelector('#pvcopy').textContent.includes('Kopiert')"))
         await pg.click("#pvclose")
         P.check("Vorschau geschlossen", not await pg.is_visible("#preview"))
         P.check("Kopier-Knopf in der Tabelle", await pg.evaluate("!!document.querySelector('td details button.mini')"))

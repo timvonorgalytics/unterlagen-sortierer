@@ -119,8 +119,12 @@ VERSION            Versionsnummer für das Release-ZIP
   (`cancel`-Handler mit `preventDefault`).
 - **Vorschau + Text kopieren:** Klick aufs Thumbnail → Overlay `#preview` im selben Fenster
   (`openPreview`, blätterbar, Esc/Klick daneben schließt; „In neuem Fenster öffnen“ als Extra).
-  `copyText()` (Clipboard-API mit execCommand-Fallback) liegt in der Vorschau und an „Erkannten
-  Text anzeigen“ – Zweck: erkannten Text in den DSGVO-konformen KI-Assistenten der Kunden kopieren.
+  Kopiert wird über `copyAll()`: Fehlen noch Seiten (OCR-Budget/Hintergrund), liest
+  `readRemaining()` sie ZUERST nach – OHNE die 40-Seiten-Kappe, Knopf zeigt „Gesamtes Dokument
+  wird gelesen …“ –, dann kopiert `copyText()` (Clipboard-API mit execCommand-Fallback)
+  `fullText(it)` = alle Seiten. `it.bgLock` verhindert, dass backgroundScan und copyAll dieselben
+  Seiten doppelt lesen. Zweck: kompletten Text in den DSGVO-konformen KI-Assistenten der Kunden
+  kopieren. Kopier-Knöpfe in der Vorschau und an „Erkannten Text anzeigen“ je Zeile.
 - **Zusammenführen:** Leiste ÜBER der Tabelle, sobald ≥ 2 Zeilen markiert sind („Zu einer PDF
   zusammenführen“, `#selbar`/`mergeSelected()` – unten rechts bleibt NUR der Speichern-Knopf, Tims
   UX-Regel). Baut per pdf-lib eine PDF aus allen markierten Dateien in Listenreihenfolge; JPG/PNG

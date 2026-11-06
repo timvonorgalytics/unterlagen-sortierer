@@ -4,6 +4,12 @@ Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
 ## 1.3.1 – 2026-11-06
 
+- **„Text kopieren“ kopiert immer das ganze Dokument:** Sind noch nicht
+  alle Seiten gelesen (die Liste zeigt ja bewusst schnell nur die ersten),
+  liest der Knopf sie zuerst nach – „Gesamtes Dokument wird gelesen …“,
+  dann „Kopiert ✓“. So bekommen die Kolleginnen und Kollegen den
+  vollständigen Text für ihren DSGVO-konformen KI-Assistenten, auch bei
+  langen Scans.
 - **Geteilte und zusammengeführte Originale räumen sich mit auf:** Sobald
   alle aus einer Datei erstellten Teile (bzw. die zusammengeführte Datei)
   gespeichert sind, wandert das Original beim Speichern automatisch in den
