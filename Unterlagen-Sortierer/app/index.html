@@ -386,6 +386,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 
 <div class="zoom hidden" id="zoom"><img id="zoomimg" alt="Vergrößerte Seitenansicht"></div>
 
+<script src="version.js"></script>
 <script src="../marke.js"></script>
 <script src="../regeln.js"></script>
 <script src="lib/pdf.min.js"></script>
@@ -1435,6 +1436,7 @@ function applyBrand() {
 }
 function init() {
   applyBrand();
+  if (window.APP_VERSION) { const f = $("#firma"); f.textContent = (f.textContent ? f.textContent + " · " : "") + "Version " + window.APP_VERSION; }
   if (!R) { setStatus("Die Datei regeln.js fehlt oder enthält einen Fehler. Bitte den Programmordner vollständig entpacken.", undefined, true); $("#pick").disabled = true; return; }
   if (!window.pdfjsLib || !window.Tesseract || !window.PDFLib || !window.TESS_WORKER_B64 || !window.TESS_DEU_B64) {
     setStatus("Programmdateien fehlen. Bitte den Ordner „app“ vollständig entpacken.", undefined, true); $("#pick").disabled = true; return;

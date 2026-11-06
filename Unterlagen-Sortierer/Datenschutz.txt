@@ -1,0 +1,44 @@
+UNTERLAGEN-SORTIERER - DATENSCHUTZ AUF EINEN BLICK
+==================================================
+
+Der Unterlagen-Sortierer wurde für die Arbeit mit sensiblen
+Antragsunterlagen entworfen. Die wichtigsten Punkte:
+
+VERARBEITUNG NUR AUF DIESEM RECHNER
+  Das Programm läuft vollständig im Browser des Arbeitsplatz-PCs.
+  Es gibt keinen Server, keine Cloud, keine Telemetrie. Es wird
+  keine einzige Netzanfrage gestellt - auch die Texterkennung
+  (OCR) und das Lesen der PDFs laufen mit eingebetteten, lokalen
+  Bibliotheken. Das Programm funktioniert komplett ohne
+  Internetverbindung.
+
+  Dieser Punkt wird bei jeder Auslieferung automatisiert geprüft:
+  Der Test "tests/test_offline.py" führt das Programm ohne Netz
+  aus und stellt sicher, dass null Anfragen entstehen.
+
+KEINE SPEICHERUNG VON PERSONENDATEN DURCH DAS PROGRAMM
+  Namen, Dokumentinhalte und Dateinamen werden nur im
+  Arbeitsspeicher der geöffneten Seite gehalten und sind nach dem
+  Schließen des Browsers weg. Im Browser dauerhaft gespeichert
+  werden ausschließlich Programmeinstellungen (z. B. das
+  Dateinamen-Muster) - niemals Namen oder Inhalte.
+  Eine geladene Personenliste wird nicht gespeichert.
+
+ALLE DATEIEN BLEIBEN BEIM KUNDEN
+  Umbenannte Dateien, Unterordner und das Protokoll-CSV entstehen
+  ausschließlich in dem Ordner, den die Anwenderin oder der
+  Anwender selbst ausgewählt hat. Es wird nie etwas überschrieben
+  und nie ein fremder Ordner verändert.
+
+FOLGEN FÜR DEN EINSATZ
+  Da keine personenbezogenen Daten an Dritte übermittelt oder
+  durch den Hersteller verarbeitet werden, ist für den Betrieb
+  kein Auftragsverarbeitungsvertrag mit dem Hersteller nötig.
+  Die Verarbeitung bleibt vollständig in der Verantwortung und
+  Infrastruktur der einsetzenden Stelle.
+
+  Hinweis: Diese Zusammenfassung beschreibt die technische
+  Funktionsweise und ersetzt keine rechtliche Prüfung durch die
+  oder den Datenschutzbeauftragte(n) der einsetzenden Stelle.
+
+Hersteller: Orgalytics - office@orgalytics.de

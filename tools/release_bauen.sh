@@ -6,6 +6,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 VERSION="$(tr -d '[:space:]' < VERSION)"
 PROG="Unterlagen-Sortierer"
 
+# Version und Lizenz ins Produkt übernehmen
+printf '// Wird von tools/release_bauen.sh aus der Datei VERSION erzeugt – nicht von Hand ändern.\nwindow.APP_VERSION = "%s";\n' "$VERSION" > "$PROG/app/version.js"
+cp LICENSE "$PROG/Lizenz.txt"
+
 if [ "${1:-}" != "--ohne-tests" ]; then bash tests/alle_tests.sh; fi
 
 # Windows-Dateien: CRLF; .bat nur ASCII (cmd liest sonst Umlaute falsch)
