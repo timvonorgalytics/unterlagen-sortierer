@@ -1269,6 +1269,7 @@ async function doSplit() {
       const pageRecs = sg.kept.map((p) => split.pages[p]);
       const ni = newItem({
         name: uniqueListName(segs.length === 1 ? `${base}_${orderChanged ? "sortiert" : "bereinigt"}.pdf` : `${base}_Teil${k + 1}.pdf`),
+        srcItem: it,                                                 // fürs Wegräumen des Originals nach dem Speichern
         data, size: data.length,
         pages: sg.kept.length, pagesRead: sg.kept.length,            // alle Seiten sind schon gelesen
         pageRot: sg.kept.map(() => 0),                               // die neue Datei steht gerade
@@ -1659,6 +1660,26 @@ async function applyFolder(sel, log, now) {
     }
     return folders.get(key);
   }
+  // Original in den Unterordner „verarbeitet“ verschieben (Scan-Ordner = offene Arbeit).
+  // Liegt die Datei nicht mehr direkt im Scan-Ordner, passiert nichts.
+  async function originalWegraeumen(it) {
+    try {
+      const where = await state.dir.resolve(it.handle);
+      if (!where || where.length !== 1) return false;
+      const vd = await state.dir.getDirectoryHandle("verarbeitet", { create: true });
+      const v = await folderFor("::verarbeitet", vd);
+      const vName = uniqueName(it.name, v.taken);
+      let moved = false;
+      if (typeof it.handle.move === "function") { try { await it.handle.move(vd, vName); moved = true; } catch {} }
+      if (!moved) {
+        const nfh = await vd.getFileHandle(vName, { create: true });
+        const nw = await nfh.createWritable(); await nw.write(await it.handle.getFile()); await nw.close();
+        await state.dir.removeEntry(it.name);
+        it.handle = nfh;
+      }
+      return true;
+    } catch (e) { console.error(e); return false; }
+  }
   let ok = 0, fail = 0;
   for (const [i, it] of sel.entries()) {
     setStatus(`Speichere ${i + 1} von ${sel.length} …`, i / sel.length);
@@ -1679,24 +1700,7 @@ async function applyFolder(sel, log, now) {
         const w = await fh.createWritable(); await w.write(turned ? turned.data : await it.handle.getFile()); await w.close();
         // Original in den Unterordner „verarbeitet“ verschieben: Der Scan-Ordner zeigt so immer nur
         // die offene Arbeit – auch nach einem Neustart wird nichts doppelt eingelesen.
-        let verschoben = false;
-        try {
-          const where = await state.dir.resolve(it.handle);
-          if (where && where.length === 1) {   // liegt noch direkt im Scan-Ordner
-            const vd = await state.dir.getDirectoryHandle("verarbeitet", { create: true });
-            const v = await folderFor("::verarbeitet", vd);
-            const vName = uniqueName(oldName, v.taken);
-            let moved = false;
-            if (typeof it.handle.move === "function") { try { await it.handle.move(vd, vName); moved = true; } catch {} }
-            if (!moved) {
-              const nfh = await vd.getFileHandle(vName, { create: true });
-              const nw = await nfh.createWritable(); await nw.write(await it.handle.getFile()); await nw.close();
-              await state.dir.removeEntry(oldName);
-              it.handle = nfh;
-            }
-            verschoben = true;
-          }
-        } catch (e) { console.error(e); }
+        const verschoben = await originalWegraeumen(it);
         it.appliedText = verschoben ? "Kopie gespeichert, Original → verarbeitet" : "Kopie gespeichert";
       }
       const rel = sub + "/" + newName;
@@ -1708,6 +1712,25 @@ async function applyFolder(sel, log, now) {
       console.error(e); it.status = "failed"; it.error = "Speichern fehlgeschlagen"; fail++;
     }
     renderRow(it);
+  }
+  // Originale geteilter oder zusammengeführter Dateien gelten als verarbeitet, sobald ALLE
+  // daraus erstellten Dateien gespeichert sind – sie wandern dann ebenfalls nach „verarbeitet“.
+  for (const it of state.items) {
+    if (it.status !== "done" || it.selected || !it.handle || it.data) continue;
+    if (!it.splitInto && !it.mergedIntoItem) continue;
+    const kinder = state.items.filter((k) => k.derived && (k.srcItem === it || it.mergedIntoItem === k));
+    const fertig = kinder.filter((k) => k.status === "applied");
+    if (!kinder.length || fertig.length !== kinder.length) continue;
+    if (it.splitInto && kinder.length !== it.splitInto) continue;   // z. B. ein Teil wurde verworfen
+    const oldName = it.name;
+    if (await originalWegraeumen(it)) {
+      it.status = "applied";
+      it.appliedText = it.splitInto ? "Geteilt, Original → verarbeitet" : "Zusammengeführt, Original → verarbeitet";
+      state.done.add(oldName.toLowerCase());
+      log.push(csvLine([now, oldName, "– (nach „verarbeitet“ verschoben)", it.type, it.nachname, it.vorname, "", "",
+        it.splitInto ? "Original wurde geteilt" : "Original wurde zusammengeführt"]));
+      renderRow(it);
+    }
   }
   const lf = await baseTarget.getFileHandle(`Protokoll_${stamp()}.csv`, { create: true });
   const lw = await lf.createWritable(); await lw.write("\ufeff" + log.join("\r\n") + "\r\n"); await lw.close();

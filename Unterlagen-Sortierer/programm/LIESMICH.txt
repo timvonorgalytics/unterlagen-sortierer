@@ -95,7 +95,9 @@ STAPEL-SCANS SORTIEREN UND TEILEN
   auch andere Seiten. "In N Dateien teilen" erstellt für jeden
   Abschnitt eine neue PDF-Datei mit eigenem Typ und Namen; nur
   umsortiert oder bereinigt ergibt "Sortiert speichern" EINE neue
-  Datei. Das Original bleibt unverändert und wird nur abgewählt.
+  Datei. Das Original bleibt unverändert und wird nur abgewählt;
+  sobald alle daraus erstellten Dateien gespeichert sind, wandert
+  es beim Speichern automatisch mit nach "verarbeitet".
   Tipp: Seiten aus verschiedenen Dateien sortieren geht über
   "erst zusammenführen, dann sortieren".
 
@@ -105,7 +107,9 @@ DATEIEN ZUSAMMENFÜHREN
   erscheint dann "Zu einer PDF zusammenführen". Es entsteht eine
   neue PDF-Datei mit allen Seiten; auch Fotos (JPG/PNG) werden als
   Seiten übernommen. Die Originale bleiben unverändert in der Liste
-  und zeigen, in welche Datei sie eingeflossen sind. Hatten die
+  und zeigen, in welche Datei sie eingeflossen sind; nach dem
+  Speichern der neuen Datei wandern sie mit nach "verarbeitet".
+  Hatten die
   Dateien verschiedene Dokumenttypen, wird die neue Datei gelb
   markiert - dann bitte den Typ selbst wählen.
   "Verwerfen" entfernt eine neu erstellte Datei wieder aus der Liste.

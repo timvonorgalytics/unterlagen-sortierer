@@ -2,6 +2,16 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.3.1 – 2026-11-06
+
+- **Geteilte und zusammengeführte Originale räumen sich mit auf:** Sobald
+  alle aus einer Datei erstellten Teile (bzw. die zusammengeführte Datei)
+  gespeichert sind, wandert das Original beim Speichern automatisch in den
+  Unterordner `verarbeitet` – der Scan-Ordner zeigt damit wieder nur die
+  offene Arbeit, und nach einem Neustart wird nichts doppelt eingelesen.
+  Wurde ein Teil verworfen, bleibt das Original als offene Arbeit liegen.
+  Das Protokoll vermerkt den Vorgang.
+
 ## 1.3.0 – 2026-11-06
 
 Rückmeldungen aus dem MVP-Test, direkt umgesetzt:

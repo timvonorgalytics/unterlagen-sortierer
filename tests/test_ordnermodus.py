@@ -69,6 +69,20 @@ async def main():
             P.check("Ersatzweg: Kopie da, Original in verarbeitet", "umbenannt/Mustermann_Erika/Mustermann_Erika_Antrag.pdf" in fs3
                     and "verarbeitet/Scan_0001.pdf" in fs3 and "Scan_0001.pdf" not in fs3, sorted(fs3))
             P.check("Ersatzweg vollständig", fs3.get("umbenannt/Mustermann_Erika/Mustermann_Erika_Antrag.pdf") == size)
+            # Geteilte Datei: Sobald alle Teile gespeichert sind, wandert auch das Original nach verarbeitet/
+            await fresh(pg)
+            await pg.click("button.split")
+            await pg.wait_for_function("!split.running && split.pages.length === 5", timeout=240000)
+            await pg.click("#splitok")
+            await pg.wait_for_function("state.items.some(i => i.derived)", timeout=240000)
+            await pg.click("#apply"); await pg.wait_for_function("!state.busy")
+            fs4 = await pg.evaluate(LIST)
+            P.check("Teile als Kopien gespeichert", "umbenannt/Mustermann_Erika/Mustermann_Erika_Antrag_2.pdf" in fs4
+                    or "umbenannt/Mustermann_Erika/Mustermann_Erika_Kontoauszug_2.pdf" in fs4, sorted(k for k in fs4 if k.startswith("umbenannt/")))
+            P.check("Geteiltes Original nach verarbeitet", "verarbeitet/Scan_0007_Stapel.pdf" in fs4
+                    and "Scan_0007_Stapel.pdf" not in fs4, sorted(fs4))
+            P.check("Geteiltes Original gilt als erledigt", await pg.evaluate(
+                "state.items.find(i => /Stapel/.test(i.originalName || i.name) && !i.derived).status") == "applied")
             P.check("Keine JS-Fehler", not errs, errs[:3])
             await b.close()
     finally:

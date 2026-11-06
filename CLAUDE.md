@@ -129,6 +129,12 @@ VERSION            Versionsnummer für das Release-ZIP
   das Ergebnis `typeSure=false` (gelb) statt still nach einer Datei benannt. „Verwerfen“ entfernt eine
   erzeugte Zeile (und die mergedInto-Vermerke). Erzeugte Dateien (`item.data`) werden beim Speichern
   immer neu geschrieben, Protokoll-Spalte „Hinweis“ nennt die Herkunft (Seiten/Quelldateien).
+- **Originale nach Teilen/Zusammenführen:** Nach dem Speichern prüft `applyFolder`, ob ALLE aus
+  einem Original erstellten Dateien (`k.srcItem === it` beim Teilen, `it.mergedIntoItem` beim
+  Zusammenführen) gespeichert sind – dann wandert das abgewählte Original ebenfalls nach
+  `verarbeitet/` (`originalWegraeumen`, auch von den normalen Kopien genutzt) und gilt als
+  erledigt. Wurde ein Teil verworfen (`kinder.length !== splitInto`), bleibt es liegen; externe
+  Quellen (kein `it.handle`) werden NIE angefasst.
 - **Speichern (EIN fester Weg, keine Modi):** Kopien nach `umbenannt/<Nachname_Vorname>/…` (auch als
   Pfade in der ZIP – je Person ein Ordner fürs Ziehen in die eAkte), Originale unverändert nach
   `verarbeitet/`. Nie überschreiben (`uniqueName` hängt `_2` an, je Zielordner eigene Namensliste),
@@ -197,7 +203,7 @@ python3 tests/test_dateimodus.py                             # einzelner Test
 | test_teilen.py | Stapel-Scan: Mehrtyp-Hinweis, Trennvorschlag, leere Seite erkannt/weggelassen, Trennstelle von Hand, Teilen, ZIP + Protokoll-Hinweis; Zusammenführen PDF+JPG, Verwerfen |
 | test_drehen.py | Verdrehter Scan (tests/testdocs/extra/) wird erkannt + gerade gespeichert (pypdf prüft /Rotate), {Eingang} im Namen, Eingangsstempel auf Seite 1 + Protokoll, „Seite drehen“ von Hand, Vorschau im Ordnermodus + Pfeiltasten, Zoom liegt ÜBER dem Dialog, pagesRead/pageTexts neu erzeugter Dateien |
 | test_mehrkunden.py | Unterordner je Person (Ordner + ZIP), „Neue Dateien einlesen“, Stammordner (zugezogene Dateien ergänzen + landen im Ordner) |
-| test_ordnermodus.py | Standard-Ablage: umbenannt/<Person>/, Originale nach verarbeitet/, Ersatzweg ohne move(), keine Überschreibung, Fremddateien, Neustart liest nichts doppelt |
+| test_ordnermodus.py | Standard-Ablage: umbenannt/<Person>/, Originale nach verarbeitet/ (auch das Original einer geteilten Datei), Ersatzweg ohne move(), keine Überschreibung, Fremddateien, Neustart liest nichts doppelt |
 | test_offline.py | läuft ohne Netz, null Netzanfragen |
 | test_ci.py | Farben/Name aus marke.js, Schriften offline, Logo-Einbau sicher; Screenshots in tests/screenshots |
 
