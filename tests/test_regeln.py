@@ -12,15 +12,41 @@ FAELLE = [
     ("Ärztliche Bescheinigung", "Ärztliche Bescheinigung\nzur Vorlage beim Träger der Sozialhilfe - Mehrbedarf für Ernährung\n"
      "Patientin: Helga Maria Brandt\nDiagnose: Zöliakie (ICD-10: K90.0)\nDauer der Krankenkost: unbefristet", "Arztbescheinigung", True),
     ("Kündigung", "Kündigung meines Telefonvertrags\nSehr geehrte Damen und Herren,\nhiermit kündige ich meinen Vertrag "
-     "fristgerecht zum nächstmöglichen Zeitpunkt.\nBitte bestätigen Sie das Vertragsende schriftlich.", "Kuendigung", True),
+     "fristgerecht zum nächstmöglichen Zeitpunkt.\nBitte bestätigen Sie das Vertragsende schriftlich.", "Kündigung", True),
     ("Mahnung", "Zahlungserinnerung\nSehr geehrte Frau Brandt,\nfür die Rechnung vom 01.10.2026 ist noch ein offener Betrag "
      "von 48,00 EUR verzeichnet.\nBitte zahlen Sie innerhalb der Zahlungsfrist, sonst fällt eine Mahngebühr an.", "Mahnung", True),
     ("Antrag bleibt Antrag", "Antrag auf Leistungen der Grundsicherung im Alter und bei Erwerbsminderung\n"
      "Hiermit beantrage ich Leistungen nach dem SGB XII.\nUnterschrift des Antragstellers", "Antrag", True),
-    ("Kontoauszug bleibt Kontoauszug", "Kontoauszug 10/2026\nAlter Kontostand 876,98\nBuchungstag Wertstellung\n"
-     "Neuer Kontostand 598,32\nIBAN DE09", "Kontoauszug", True),
-    ("Mietvertrag trotz Kündigungsfrist", "Wohnraummietvertrag\nzwischen Vermieter und Mieter\n§ 1 Mietsache\n"
-     "Nettokaltmiete 420,00 EUR, Kaution 840 EUR\nMietbeginn 01.04.2019\nDie Kündigungsfrist beträgt drei Monate.", "Mietvertrag", True),
+    ("Kontoauszug wird KTA", "Kontoauszug 10/2026\nAlter Kontostand 876,98\nBuchungstag Wertstellung\n"
+     "Neuer Kontostand 598,32\nIBAN DE09", "KTA", True),
+    ("Mietvertrag (MV) trotz Kündigungsfrist", "Wohnraummietvertrag\nzwischen Vermieter und Mieter\n§ 1 Mietsache\n"
+     "Nettokaltmiete 420,00 EUR, Kaution 840 EUR\nMietbeginn 01.04.2019\nDie Kündigungsfrist beträgt drei Monate.", "MV", True),
+    # ---- Kürzel-Typen aus der Liste der Kolleginnen ----
+    ("Hauptantrag (HA)", "Hauptantrag\nAntrag auf Leistungen zur Sicherung des Lebensunterhalts nach dem SGB II (Bürgergeld)\n"
+     "Jobcenter Musterstadt\nBedarfsgemeinschaft Nr. 12345", "HA", True),
+    ("Weiterbewilligungsantrag (WBA)", "Weiterbewilligungsantrag\nAntrag auf Weiterbewilligung der Leistungen\n"
+     "Jobcenter Musterstadt, Bewilligungsabschnitt 01.01.2027 bis 30.06.2027", "WBA", True),
+    ("Anlage KDU", "Anlage KDU\nKosten der Unterkunft und Heizung\nKaltmiete: 420,00 EUR\nHeizkosten: 80,00 EUR", "KDU", True),
+    ("Anlage EKS", "Anlage EKS\nErklärung zum Einkommen aus selbständiger Tätigkeit\n"
+     "Betriebseinnahmen: 2.400 EUR\nBetriebsausgaben: 900 EUR", "EKS", True),
+    ("Veränderungsmitteilung (VÄM)", "Veränderungsmitteilung\nHiermit teile ich dem Jobcenter folgende Änderung der Verhältnisse mit:\n"
+     "Umzug zum 01.12.2026", "VÄM", True),
+    ("Elterngeld", "Bescheid über Elterngeld\nBasiselterngeld für den 1. bis 12. Lebensmonat\nElterngeldstelle Musterstadt", "Elterngeld", True),
+    ("Geburtsurkunde", "Geburtsurkunde\nStandesamt Musterstadt\nKind: Lena Mustermann, geboren am 01.02.2025 in Musterstadt", "Geburtsurkunde", True),
+    ("PayPal-Auszug", "PayPal\nTransaktionsübersicht Oktober 2026\nHändler: Mustershop GmbH\nGuthaben: 12,34 EUR", "PayPal-Auszug", True),
+    ("Führerschein", "Führerschein\nFahrerlaubnis der Klasse B\nFahrerlaubnisbehörde Musterstadt", "Führerschein", True),
+    ("Ortsabwesenheit (OAW)", "Antrag auf Ortsabwesenheit\nIch bin vom 01.12. bis 14.12.2026 ortsabwesend.\n"
+     "Erreichbarkeit und Rückkehr wie angegeben.", "OAW", True),
+    ("Unterhaltsvorschuss (UHV)", "Bescheid über Unterhaltsvorschuss\nnach dem Unterhaltsvorschussgesetz\nJugendamt Musterstadt", "UHV", True),
+    ("Widerspruch", "Hiermit lege ich Widerspruch gegen den Bescheid vom 01.11.2026 ein.\n"
+     "Der Widerspruch erfolgt fristgerecht.", "Widerspruch", True),
+    # Regression: Die Rechtsbehelfsbelehrung eines Bescheids (enthält das Wort Widerspruch)
+    # darf NICHT als Widerspruch eingeordnet werden
+    ("Bescheid trotz Belehrung", "Bewilligungsbescheid\nIhnen werden Leistungen bewilligt.\n"
+     "Rechtsbehelfsbelehrung: Gegen diesen Bescheid können Sie innerhalb eines Monats Widerspruch einlegen.\n"
+     "Sozialamt Musterstadt", "Bescheid", True),
+    ("DRV statt Rentenbescheid", "Deutsche Rentenversicherung Bund\nRentenbescheid\nBescheid über Ihre Rente wegen Alters\n"
+     "Der monatliche Zahlbetrag beträgt 1.012,40 EUR", "DRV", True),
 ]
 
 async def main():
@@ -56,7 +82,8 @@ async def main():
         await pg.click("#rules")
         P.check("Regeln-Dialog offen", await pg.evaluate("document.querySelector('#rulesdlg').open"))
         txt = await pg.inner_text("#rulesbody")
-        P.check("Alle Typen gelistet", all(t in txt for t in ["Kontoauszug", "Mietbescheinigung", "Mahnung", "Arztbescheinigung"]), txt[:120])
+        P.check("Alle Typen gelistet", all(t in txt for t in ["KTA", "KDU", "Mahnung", "Arztbescheinigung"]), txt[:120])
+        P.check("Erläuterungen zu Kürzeln sichtbar", "Kontoauszug" in txt and "Kosten der Unterkunft" in txt, txt[:200])
         P.check("Begriffe sichtbar", "Alter Kontostand" in txt and "Zahlungserinnerung" in txt)
         n_stark = await pg.evaluate("document.querySelectorAll('#rulesbody .kw.stark').length")
         n_schwach = await pg.evaluate("document.querySelectorAll('#rulesbody .kw.schwach').length")

@@ -2,6 +2,28 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.5.0 – 2026-11-16
+
+Die Dokumenttypen kommen jetzt direkt aus der Praxis – abgestimmt mit den
+Kolleginnen am Service Point:
+
+- **Über 60 Dokumenttypen mit den Kürzeln der Kolleginnen:** KTA, MB, MV,
+  NK, KV, LAB, EMA, DRV, UH/UHV, KIZ u. v. m. – inklusive der amtlichen
+  SGB-II-Anlagen (HA, WBA, EK, EKS, VM, KDU, MEB, WEP, UH1–3, VÄM), die an
+  ihrem aufgedruckten Kürzel erkannt werden. Die Ansicht „Erkennungsregeln“
+  zeigt zu jedem Kürzel die Erläuterung. Dateinamen tragen das Kürzel
+  (z. B. Mustermann_Erika_KTA.pdf).
+- **Nach Dokumenttyp bündeln:** Neuer Knopf im Teilen-Dialog – ein Klick
+  schiebt alle Seiten gleichen Typs zusammen (z. B. eine verrutschte
+  Antragsseite zurück zu ihrem Antrag) und setzt die Trennstellen je Typ.
+  Das Ergebnis bleibt vor dem Teilen prüfbar und änderbar.
+- **Mit Prüfauftrag kopieren:** Neuer Knopf in der Vorschau – kopiert den
+  Text aller Seiten mit einem vorangestellten Prüfauftrag (in regeln.js
+  anpassbar) für den DSGVO-konformen KI-Assistenten.
+- **Namenserkennung je Kunde abschaltbar** (regeln.js, `namenErkennen:
+  false`): Dann gilt nur der oben eingetragene Fallname – für Teams, die
+  jede Datei ohnehin gegen den Fall prüfen.
+
 ## 1.4.0 – 2026-11-07
 
 Neue Werkzeugleiste für die Arbeit mit vielen Dokumenten – abgestimmt

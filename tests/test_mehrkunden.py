@@ -38,8 +38,8 @@ async def main():
             P.check("Knopf Neue Dateien sichtbar", await pg.is_visible("#rescan"))
             await pg.click("#apply"); await pg.wait_for_function("!state.busy")
             fs = await pg.evaluate(LIST)
-            P.check("Erika-Unterordner", "umbenannt/Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in fs, sorted(fs))
-            P.check("Hans-Unterordner", "umbenannt/Mustermann_Hans/Mustermann_Hans_Rentenbescheid.pdf" in fs, sorted(fs))
+            P.check("Erika-Unterordner", "umbenannt/Mustermann_Erika/Mustermann_Erika_KTA.pdf" in fs, sorted(fs))
+            P.check("Hans-Unterordner", "umbenannt/Mustermann_Hans/Mustermann_Hans_DRV.pdf" in fs, sorted(fs))
             P.check("Originale nach verarbeitet", "verarbeitet/Scan_0002.pdf" in fs and "Scan_0002.pdf" not in fs, sorted(fs))
             P.check("Protokoll in umbenannt", any(k.startswith("umbenannt/Protokoll_") for k in fs), sorted(fs))
 
@@ -67,8 +67,8 @@ async def main():
             P.check("Zugezogene Datei ergänzt", any(x["d"] == "Mail_Anhang.pdf" and x["ex"] for x in r), r)
             await pg.click("#apply"); await pg.wait_for_function("!state.busy")
             fs = await pg.evaluate(LIST)
-            P.check("Externe Datei im Stammordner", "umbenannt/Mustermann_Erika/Mustermann_Erika_Kontoauszug_2.pdf" in fs, sorted(fs))
-            P.check("Scan_0005 verarbeitet", any("Krankenversicherung" in k for k in fs) and "verarbeitet/Scan_0005.pdf" in fs, sorted(fs))
+            P.check("Externe Datei im Stammordner", "umbenannt/Mustermann_Erika/Mustermann_Erika_KTA_2.pdf" in fs, sorted(fs))
+            P.check("Scan_0005 verarbeitet", any("Mustermann_Erika_KV" in k for k in fs) and "verarbeitet/Scan_0005.pdf" in fs, sorted(fs))
             logs = sorted(k for k in fs if k.startswith("umbenannt/Protokoll_"))
             logtxt = await pg.evaluate("""async (n) => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('scans');
                 const u = await d.getDirectoryHandle('umbenannt');
@@ -83,10 +83,10 @@ async def main():
                 await pg.click("#apply")
             z = zipfile.ZipFile(io.BytesIO(open(await (await dl.value).path(), "rb").read()))
             names = z.namelist()
-            P.check("ZIP mit Personen-Pfaden", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in names
-                    and "Mustermann_Hans/Mustermann_Hans_Rentenbescheid.pdf" in names, names)
+            P.check("ZIP mit Personen-Pfaden", "Mustermann_Erika/Mustermann_Erika_KTA.pdf" in names
+                    and "Mustermann_Hans/Mustermann_Hans_DRV.pdf" in names, names)
             log = z.read([x for x in names if x.startswith("Protokoll")][0]).decode("utf-8-sig")
-            P.check("Pfad im Protokoll", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in log)
+            P.check("Pfad im Protokoll", "Mustermann_Erika/Mustermann_Erika_KTA.pdf" in log)
             P.check("Keine JS-Fehler", not errs, errs[:3])
             await b.close()
     finally:

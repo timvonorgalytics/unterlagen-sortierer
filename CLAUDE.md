@@ -88,6 +88,15 @@ VERSION            Versionsnummer für das Release-ZIP
 - **classify:** Begriffe aus regeln.js, normalisiert (`norm()`: klein, ä→ae, ß→ss, nur a-z0-9).
   `stark` = 3 Punkte, `schwach` = 1; im Kopf der Seite (erste 450 Zeichen) ×1,5.
   „Sicher“ wenn ≥ 3 Punkte und ≥ 1,5× der Zweitplatzierte.
+  Die Typen (seit 1.5.0 über 60) kommen aus der Excel-Liste der Kolleginnen (Tim, 16.11.2026):
+  Typ-`name` = deren KÜRZEL (KTA, MB, KDU …), `info` = Erläuterung (erscheint in der
+  Regeln-Ansicht). Die SGB-II-Anlagen (HA, WBA, EK, EKS, VM, KDU, MEB, WEP, UH1–3, VÄM) werden
+  am aufgedruckten Kürzel erkannt („Anlage EK“). Begriffe so wählen, dass sich stark-Begriffe
+  zweier Typen nicht doppeln (sonst nie „sicher“); Belehrungs-Wörter wie „Widerspruch“ gehören
+  beim Typ Widerspruch nur als Phrase („lege ich Widerspruch“) in stark, sonst feuert er auf
+  jedem Bescheid. `namenErkennen: false` (regeln.js) schaltet findName je Kunde ab (nur noch
+  Fallname über die Werkzeugleiste); `pruefauftrag` ist der Vorspann für „Mit Prüfauftrag
+  kopieren“ (leer = Knopf versteckt).
 - **findName (Reihenfolge):** Formularfelder
   („Name, Vorname:“; „Familienname/Nachname“ und „Vorname(n)“ auch mit Wert in der NÄCHSTEN Zeile
   (Formular-Tabellen) und mit zwei Vornamen; beschriftete Voll-Namen-Felder Mieter(in)/Patient(in)/
@@ -239,3 +248,10 @@ für alle Kunden gleich. Kundenspezifische Dateien nicht in dieses Repo eincheck
 - [x] Orgalytics-Bildmarke in `marke.js` eingesetzt (06.11.2026)
 - [ ] Erster Test auf echtem Windows-PC mit Edge und auf einem Mac (Doppelklick auf die .command)
 - [ ] Regeln mit echten (anonymisierten) Kundenbeispielen schärfen
+- [ ] Unklare Kürzel aus der Kolleginnen-Liste mit dem Team klären und in regeln.js nachschärfen:
+      BB, HG, SE, SV, UF, VE, Nwdigital, Mantelbogen, Profilbogen (aktuell Platzhalter-Regeln
+      „Anlage XX“ bzw. Wortsuche); Eintrag „Brief“ ist bewusst nicht als Typ angelegt (nicht
+      erkennbar – bleibt Sonstiges)
+- [ ] Automatisches Seiten-Ordnen (unsortierter Kontoauszug/WBA): bewusst zurückgestellt –
+      mit Tim einen Plan machen, wie das mit dem Business-GPT des Kunden umsetzbar wäre
+      (einfache Fälle wie „Seite 2 von 5“ gingen auch regelbasiert)

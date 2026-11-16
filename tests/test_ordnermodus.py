@@ -44,7 +44,7 @@ async def main():
             fs = await pg.evaluate(LIST)
             kopien = [k for k in fs if k.startswith("umbenannt/") and not k.endswith(".csv")]
             P.check("Kopien je Person in umbenannt/", "umbenannt/Mustermann_Erika/Mustermann_Erika_Antrag.pdf" in fs
-                    and "umbenannt/Mustermann_Hans/Mustermann_Hans_Rentenbescheid.pdf" in fs, sorted(fs))
+                    and "umbenannt/Mustermann_Hans/Mustermann_Hans_DRV.pdf" in fs, sorted(fs))
             P.check("Alle Kopien da", len(kopien) == len(NAMES), kopien)
             P.check("Kopie vollständig", fs.get("umbenannt/Mustermann_Erika/Mustermann_Erika_Antrag.pdf") == size)
             P.check("Originale nach verarbeitet", all(f"verarbeitet/{n}" in fs for n in NAMES)
@@ -78,7 +78,7 @@ async def main():
             await pg.click("#apply"); await pg.wait_for_function("!state.busy")
             fs4 = await pg.evaluate(LIST)
             P.check("Teile als Kopien gespeichert", "umbenannt/Mustermann_Erika/Mustermann_Erika_Antrag_2.pdf" in fs4
-                    or "umbenannt/Mustermann_Erika/Mustermann_Erika_Kontoauszug_2.pdf" in fs4, sorted(k for k in fs4 if k.startswith("umbenannt/")))
+                    or "umbenannt/Mustermann_Erika/Mustermann_Erika_KTA_2.pdf" in fs4, sorted(k for k in fs4 if k.startswith("umbenannt/")))
             P.check("Geteiltes Original nach verarbeitet", "verarbeitet/Scan_0007_Stapel.pdf" in fs4
                     and "Scan_0007_Stapel.pdf" not in fs4, sorted(fs4))
             P.check("Geteiltes Original gilt als erledigt", await pg.evaluate(

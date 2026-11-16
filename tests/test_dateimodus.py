@@ -3,9 +3,9 @@ import asyncio, io, zipfile
 from playwright.async_api import async_playwright
 from _gemeinsam import APP, DOCS, DOCS_DIR, Pruefer
 
-TYP = {"Foto_Ausweis.jpg": "Ausweis", "Rentenanpassung_digital.pdf": "Rentenanpassung", "Scan_0001.pdf": "Antrag",
-       "Scan_0002.pdf": "Kontoauszug", "Scan_0003.pdf": "Mietvertrag", "Scan_0004.pdf": "Rentenbescheid",
-       "Scan_0005.pdf": "Krankenversicherung", "Scan_0006.pdf": "Nebenkostenabrechnung",
+TYP = {"Foto_Ausweis.jpg": "Ausweis", "Rentenanpassung_digital.pdf": "DRV", "Scan_0001.pdf": "Antrag",
+       "Scan_0002.pdf": "KTA", "Scan_0003.pdf": "MV", "Scan_0004.pdf": "DRV",
+       "Scan_0005.pdf": "KV", "Scan_0006.pdf": "NK",
        "Scan_0007_Stapel.pdf": "Antrag", "Scan_0008.pdf": "Sonstiges"}
 PERS = {"Foto_Ausweis.jpg": "Mustermann Erika", "Rentenanpassung_digital.pdf": "Mustermann Hans", "Scan_0001.pdf": "Mustermann Erika",
         "Scan_0002.pdf": "Mustermann Erika", "Scan_0003.pdf": "Mustermann Erika", "Scan_0004.pdf": "Mustermann Hans",
@@ -60,7 +60,7 @@ async def main():
         rows = await run(pg)
         await pg.fill("tbody tr:nth-child(10) input.name >> nth=0", "Mustermann")
         await pg.fill("tbody tr:nth-child(10) input.name >> nth=1", "Erika")
-        await pg.select_option("tbody tr:nth-child(10) select", "Kontoauszug")
+        await pg.select_option("tbody tr:nth-child(10) select", "KTA")
         P.check("Manuell korrigiert = sicher", await pg.evaluate("rowState(state.items[9])[0]") == "ok")
         await pg.click("tbody tr:nth-child(1) input[type=checkbox]")
         async with pg.expect_download() as dl:
@@ -70,12 +70,16 @@ async def main():
         P.check("ZIP gültig", z.testzip() is None)
         P.check("9 Dateien + Protokoll", len(names) == 10, names)
         P.check("Abgewählte Datei fehlt", not any("Ausweis" in n for n in names))
-        P.check("Pfade je Person", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in names
+        P.check("Pfade je Person", "Mustermann_Erika/Mustermann_Erika_KTA.pdf" in names
                 and any(n.startswith("Mustermann_Hans/") for n in names), names)
-        P.check("Doppelte Namen nummeriert", "Mustermann_Erika/Mustermann_Erika_Kontoauszug_2.pdf" in names, names)
+        P.check("Doppelte Namen nummeriert", "Mustermann_Erika/Mustermann_Erika_KTA_2.pdf" in names, names)
         P.check("Inhalt unverändert", z.read("Mustermann_Erika/Mustermann_Erika_Antrag.pdf") == (DOCS_DIR / "Scan_0001.pdf").read_bytes())
         log = z.read([n for n in names if n.startswith("Protokoll")][0]).decode("utf-8-sig")
         P.check("Protokoll lesbar", "Originalname" in log and "Scan_0001.pdf" in log)
+        # Schalter: Namenserkennung je Kunde abschaltbar (regeln.js → namenErkennen: false)
+        await pg.evaluate("R.namenErkennen = false; state.items[1].manual = {}; analyse(state.items[1])")
+        P.check("Ohne Namenserkennung bleibt der Name leer", await pg.evaluate(
+            "state.items[1].nachname === '' && state.items[1].nameSrc === ''"))
         P.check("Keine JS-Fehler", not errs, errs[:3])
         await b.close()
     P.ende()

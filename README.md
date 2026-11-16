@@ -16,7 +16,8 @@ direkt per Drag & Drop in die eAkte ziehen, wo der Dateiname sofort sagt, was dr
 
 ## Funktionen
 
-- **Erkennen & Umbenennen:** Dokumenttyp über editierbare Suchbegriffe (24 Typen ab Werk),
+- **Erkennen & Umbenennen:** Dokumenttyp über editierbare Suchbegriffe (über 60 Typen ab Werk,
+  aus der Praxis von Jobcenter/Sozialamt – inkl. der SGB-II-Anlagen wie EK, VM, KDU, WEP),
   Person über Formularfelder, Anschrift, Absender oder Briefanrede;
   Dateinamen-Muster frei kombinierbar; Ampel-Status je Datei, alles von Hand korrigierbar;
   verdreht eingescannte Seiten werden automatisch erkannt, gerade angezeigt und gerade gespeichert

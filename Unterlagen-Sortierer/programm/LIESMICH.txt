@@ -5,7 +5,10 @@ Das Programm liest eingescannte Unterlagen (PDF, JPG, PNG), erkennt den
 Dokumenttyp und den Namen und benennt die Dateien einheitlich um, z. B.:
 
     Scan_0001.pdf   ->   Mustermann_Erika_Antrag.pdf
-    Scan_0002.pdf   ->   Mustermann_Erika_Kontoauszug.pdf
+    Scan_0002.pdf   ->   Mustermann_Erika_KTA.pdf
+
+Die Dokumenttypen tragen die im Team ueblichen Kuerzel (KTA, MB, KDU,
+WBA ...); der Knopf "Erkennungsregeln" erklaert jedes Kuerzel.
 
 Alles läuft auf diesem Rechner. Es werden keine Daten übertragen,
 eine Internetverbindung ist nicht nötig.
@@ -53,8 +56,9 @@ SO GEHT'S
      selben Fenster: Pfeiltasten links/rechts blättern die Seiten,
      hoch/runter springen zum vorherigen bzw. nächsten Dokument.
      "Text kopieren" legt den erkannten Text ALLER Seiten in die
-     Zwischenablage (z. B. zum Einfügen in einen DSGVO-konformen
-     KI-Assistenten). Sind noch nicht alle Seiten gelesen, holt der
+     Zwischenablage; "Mit Prüfauftrag kopieren" stellt einen
+     Prüfauftrag voran (Text in programm\regeln.js anpassbar) -
+     beides zum Einfügen in einen DSGVO-konformen KI-Assistenten. Sind noch nicht alle Seiten gelesen, holt der
      Knopf das zuerst nach ("Gesamtes Dokument wird gelesen ...")
      und bestätigt dann mit "Kopiert". "In neuem Fenster öffnen"
      zeigt die Originaldatei. Der Kopier-Knopf steht auch unter
@@ -101,7 +105,10 @@ STAPEL-SCANS SORTIEREN UND TEILEN
   vor; ein Klick zwischen zwei Seiten setzt oder entfernt eine
   Trennstelle. Leere Rückseiten (Duplex-Scan) werden erkannt und
   weggelassen - "behalten" holt sie zurück, "weglassen" entfernt
-  auch andere Seiten. "In N Dateien teilen" erstellt für jeden
+  auch andere Seiten. "Nach Dokumenttyp bündeln" schiebt alle Seiten
+  gleichen Typs zusammen (z. B. eine verrutschte Antragsseite zurück
+  zu ihrem Antrag) und setzt die Trennstellen je Typ - das Ergebnis
+  bleibt vor dem Teilen prüfbar und änderbar. "In N Dateien teilen" erstellt für jeden
   Abschnitt eine neue PDF-Datei mit eigenem Typ und Namen; nur
   umsortiert oder bereinigt ergibt "Sortiert speichern" EINE neue
   Datei. Das Original bleibt unverändert und wird nur abgewählt;

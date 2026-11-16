@@ -20,7 +20,7 @@ async def main():
         await pg.set_input_files("#filepick", GEDREHT)
         await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
         it = await pg.evaluate("({t: state.items[0].type, n: state.items[0].nachname + ' ' + state.items[0].vorname, rot: (state.items[0].pageRot||[])[0]})")
-        P.check("Verdrehter Scan: Typ erkannt", it["t"] == "Mietbescheinigung", it)
+        P.check("Verdrehter Scan: Typ erkannt", it["t"] == "MB", it)
         P.check("Verdrehter Scan: Name erkannt", it["n"] == "Mustermann Erika", it)
         P.check("Drehung erkannt (90/270)", it["rot"] in (90, 270), it)
         thumb = await pg.evaluate("state.items[0].thumb")
@@ -38,7 +38,7 @@ async def main():
         z = zipfile.ZipFile(io.BytesIO(open(await (await dl.value).path(), "rb").read()))
         name = [n for n in z.namelist() if n.endswith(".pdf")][0]
         raw = z.read(name)
-        P.check("Kopie heißt nach Person und Typ", "Mustermann_Erika_Mietbescheinigung" in name, name)
+        P.check("Kopie heißt nach Person und Typ", "Mustermann_Erika_MB" in name, name)
         P.check("{Eingang} im Dateinamen", "_2026-11-06.pdf" in name, name)
         P.check("Drehung in der PDF gespeichert", rotation(raw) in (90, 270), rotation(raw))
         P.check("Eingangsstempel auf Seite 1", "Eingang: 06.11.2026" in PdfReader(io.BytesIO(raw)).pages[0].extract_text())

@@ -38,6 +38,10 @@ async def main():
         P.check("Kopieren liest Rest nach", await pg.evaluate("state.items[0].pagesRead === state.items[0].pages"))
         P.check("Alle Seiten in der Zwischenablage", await pg.evaluate("__kopiert.includes('Kontoauszug 09/2026') && __kopiert.includes('Antrag')"))
         P.check("Knopf bestätigt sichtbar", await pg.evaluate("document.querySelector('#pvcopy').textContent.includes('Kopiert')"))
+        # „Mit Prüfauftrag kopieren“: Prüftext aus regeln.js steht vor dem Dokumenttext
+        await pg.click("#pvcheck")
+        await pg.wait_for_function("window.__kopiert.startsWith('Bitte prüfe')", timeout=60000)
+        P.check("Prüfauftrag vorangestellt", await pg.evaluate("__kopiert.includes('---') && __kopiert.includes('Kontoauszug 09/2026')"))
         await pg.click("#pvclose")
         P.check("Vorschau geschlossen", not await pg.is_visible("#preview"))
         P.check("Kopier-Knopf in der Tabelle", await pg.evaluate("!!document.querySelector('td details button.mini')"))
@@ -62,7 +66,7 @@ async def main():
         rows = await pg.evaluate("state.items.map(i => ({ n: i.name, t: i.type, sel: i.selected, pg: i.pages, d: !!i.derived, nn: i.nachname + ' ' + i.vorname }))")
         P.check("Original abgewählt", rows[0]['sel'] is False and rows[0]['d'] is False, rows[0])
         P.check("Teil 1: Antrag, 2 Seiten", rows[1]['t'] == "Antrag" and rows[1]['pg'] == 2 and rows[1]['d'], rows[1])
-        P.check("Teil 2: Kontoauszug, 2 Seiten", rows[2]['t'] == "Kontoauszug" and rows[2]['pg'] == 2 and rows[2]['d'], rows[2])
+        P.check("Teil 2: Kontoauszug, 2 Seiten", rows[2]['t'] == "KTA" and rows[2]['pg'] == 2 and rows[2]['d'], rows[2])
         P.check("Namen erkannt", rows[1]['nn'] == "Mustermann Erika" and rows[2]['nn'] == "Mustermann Erika", rows)
 
         # D) ZIP-Export: zwei neue PDFs mit je 2 Seiten + Protokoll mit Hinweis
@@ -72,7 +76,7 @@ async def main():
         names = z.namelist()
         P.check("2 Teile + Protokoll", len(names) == 3, names)
         P.check("Antrag-PDF im ZIP", "Mustermann_Erika/Mustermann_Erika_Antrag.pdf" in names, names)
-        P.check("Kontoauszug-PDF im ZIP", "Mustermann_Erika/Mustermann_Erika_Kontoauszug.pdf" in names, names)
+        P.check("Kontoauszug-PDF im ZIP", "Mustermann_Erika/Mustermann_Erika_KTA.pdf" in names, names)
         teil = z.read("Mustermann_Erika/Mustermann_Erika_Antrag.pdf")
         P.check("Gültige PDF-Datei", teil[:5] == b"%PDF-")
         n = await pg.evaluate(PAGECOUNT, base64.b64encode(teil).decode())
@@ -122,11 +126,21 @@ async def main():
         P.check("Neuer Vorschlag: 3 Teile", await pg.inner_text("#splitok") == "In 3 Dateien teilen",
                 await pg.evaluate("[...split.cuts].sort().join(',')"))
         segs = await pg.evaluate("splitSegments().map(s => ({ t: s.cls.type, k: s.kept }))")
-        P.check("Segmente folgen der neuen Reihenfolge", segs[0]['t'] == "Antrag" and segs[1]['t'] == "Kontoauszug"
+        P.check("Segmente folgen der neuen Reihenfolge", segs[0]['t'] == "Antrag" and segs[1]['t'] == "KTA"
                 and segs[2]['t'] == "Antrag" and segs[2]['k'] == [0], segs)
         await pg.evaluate("movePage(4, 0)")   # zurücksortieren → wieder 2 Teile, Original-Reihenfolge
         P.check("Zurücksortiert", await pg.evaluate("split.order.join(',')") == "0,1,2,3,4"
                 and await pg.inner_text("#splitok") == "In 2 Dateien teilen")
+
+        # H) Nach Dokumenttyp bündeln: verrutschte Seite wandert zu ihrem Typ zurück
+        await pg.evaluate("movePage(0, 3)")   # erste Antrag-Seite zwischen die Kontoauszüge schieben
+        await pg.click("#bundle")
+        P.check("Bündeln gruppiert nach Typ", await pg.evaluate("split.order.join(',')") == "1,0,3,4,2"
+                and await pg.evaluate("[...split.cuts].sort().join(',')") == "2,4",
+                await pg.evaluate("split.order.join(',') + ' | ' + [...split.cuts].sort().join(',')"))
+        P.check("Bündeln: 2 Dateien, leere Seite weggelassen", await pg.inner_text("#splitok") == "In 2 Dateien teilen",
+                await pg.inner_text("#splitinfo"))
+        P.check("Nach Bündeln weiter änderbar", await pg.evaluate("(() => { movePage(0, 1); return split.order.join(','); })()") == "0,1,3,4,2")
         await pg.click("#splitcancel")
 
         P.check("Keine JS-Fehler", not errs, errs[:3])

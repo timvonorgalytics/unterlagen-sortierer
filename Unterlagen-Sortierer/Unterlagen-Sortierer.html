@@ -275,6 +275,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   background: hsl(var(--h) 45% 94%); color: hsl(var(--h) 45% 24%); border-radius: 0 3px 3px 0; padding: 3px 10px 3px 8px; margin-bottom: 7px;
 }
 :root[data-theme="dark"] .rule .tabname { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); border-left-color: hsl(var(--h) 45% 60%); }
+.rule .ruleinfo { margin-left: 10px; color: var(--muted); font-size: 13px; }
 .rule .kws { display: flex; flex-wrap: wrap; gap: 5px; }
 .kw { font-size: 12.5px; border-radius: 2px; padding: 2px 8px; }
 .kw.stark { background: var(--accent-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); font-weight: 600; }
@@ -432,6 +433,8 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <div class="pages" id="splitpages"></div>
   </div>
   <div class="dlgfoot">
+    <button class="btn" id="bundle" disabled
+      title="Alle Seiten gleichen Dokumenttyps zusammenschieben und je Typ eine Trennstelle setzen – vor dem Teilen prüfbar und änderbar">Nach Dokumenttyp bündeln</button>
     <div class="dlginfo" id="splitinfo"></div>
     <button class="btn" id="splitcancel">Abbrechen</button>
     <button class="btn primary" id="splitok" disabled>Teilen</button>
@@ -445,6 +448,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <div class="pvhead">
       <span class="pvtitle" id="pvtitle"></span>
       <button class="btn" id="pvcopy">Text kopieren</button>
+      <button class="btn" id="pvcheck" title="Text aller Seiten samt Prüfauftrag kopieren – zum Einfügen in den DSGVO-konformen KI-Assistenten">Mit Prüfauftrag kopieren</button>
       <button class="btn" id="pvrot" title="Seite um 90 Grad drehen – die Drehung wird beim Speichern übernommen">Seite drehen</button>
       <button class="btn" id="pvext">In neuem Fenster öffnen</button>
       <button class="btn" id="pvclose">Schließen</button>
@@ -943,7 +947,11 @@ async function start(items, append) {
 function analyse(it) {
   const c = classify(it.text);
   if (!it.manual.type) { it.type = c.type; it.typeSure = c.sure; it.why = c.why; }
-  const nm = findName(it.text);
+  // Je Kunde abschaltbar (regeln.js, namenErkennen: false): Dann gilt nur der
+  // oben eingetragene Fallname – die Tabelle zeigt keine erkannten Namen.
+  const nm = R.namenErkennen === false
+    ? { nachname: "", vorname: "", src: "", sure: false }
+    : findName(it.text);
   if (!it.manual.nachname) it.nachname = nm.nachname;
   if (!it.manual.vorname) it.vorname = nm.vorname;
   if (!it.manual.nachname && !it.manual.vorname) { it.nameSrc = nm.src; it.nameSure = nm.sure; }
@@ -1203,6 +1211,28 @@ function renderSplitPages() {
   const wrap = $("#splitpages"); wrap.innerHTML = "";
   split.order.forEach((orig, disp) => renderSplitCard(wrap, disp, orig, split.pages[orig]));
 }
+/* „Nach Dokumenttyp bündeln“: Seiten gleichen Typs zusammenschieben (Reihenfolge innerhalb
+   des Typs bleibt), Trennstellen je Typ setzen. Nur die ANSICHT ändert sich – die Mitarbeiterin
+   kann danach weiter Seiten verschieben und Trennstellen ändern; gespeichert wird erst beim Teilen. */
+function bundleByType() {
+  if (split.running) return;
+  const key = (o) => { const r = split.pages[o]; return r.leer ? "···leer" : (r.cls && r.cls.type) || "?"; };
+  const groups = [];   // Reihenfolge = erstes Vorkommen; leere Seiten ans Ende
+  for (const o of split.order) {
+    const k = key(o);
+    let g = groups.find((x) => x.k === k);
+    if (!g) { g = { k, pages: [] }; groups.push(g); }
+    g.pages.push(o);
+  }
+  groups.sort((a, b) => (a.k === "···leer") - (b.k === "···leer"));
+  split.order = groups.flatMap((g) => g.pages);
+  split.cuts = new Set();
+  let pos = 0;
+  for (const g of groups) { if (pos > 0) split.cuts.add(pos); pos += g.pages.length; }
+  split.auto = false;
+  renderSplitPages();
+  updateSplitInfo();
+}
 /* Seite per Drag & Drop an eine neue Position ziehen: Trennvorschlag wird neu berechnet */
 function movePage(from, to) {
   const [x] = split.order.splice(from, 1);
@@ -1288,6 +1318,7 @@ function updateSplitInfo() {
     : segs.length === 1 && orderChanged ? "Sortiert speichern"
     : segs.length === 1 && dropped ? "Ohne weggelassene Seiten speichern" : "Teilen";
   $("#splitok").disabled = split.running || !segs.length || (segs.length < 2 && !dropped && !orderChanged);
+  $("#bundle").disabled = split.running;
 }
 async function doSplit() {
   const segs = splitSegments();
@@ -1418,8 +1449,9 @@ async function copyText(t, btn) {
   }
 }
 /* „Text kopieren“: liest zuerst noch fehlende Seiten nach, damit IMMER das
-   ganze Dokument in der Zwischenablage landet (z. B. für den KI-Assistenten). */
-async function copyAll(it, btn) {
+   ganze Dokument in der Zwischenablage landet (z. B. für den KI-Assistenten).
+   vorspann: optionaler Text davor (Prüfauftrag aus regeln.js). */
+async function copyAll(it, btn, vorspann) {
   if (/\.pdf$/i.test(it.name) && (it.pagesRead || 0) < (it.pages || 0)) {
     const alt = btn.textContent; btn.disabled = true;
     btn.textContent = "Gesamtes Dokument wird gelesen …";
@@ -1427,7 +1459,7 @@ async function copyAll(it, btn) {
     catch (e) { console.error(e); setStatus("Einige Seiten konnten nicht gelesen werden – kopiert wird der bisher erkannte Text.", undefined, true); }
     btn.textContent = alt; btn.disabled = false;
   }
-  copyText(fullText(it), btn);
+  copyText((vorspann ? vorspann + "\n\n---\n\n" : "") + fullText(it), btn);
 }
 const pv = { it: null, page: 1, doc: null, url: null, seq: 0 };
 async function openPreview(it) {
@@ -1488,10 +1520,12 @@ function openRules() {
   for (const t of R.dokumenttypen) {
     const d = document.createElement("div"); d.className = "rule";
     const h = document.createElement("span"); h.className = "tabname"; h.style.setProperty("--h", hue(t.name)); h.textContent = t.name;
+    d.appendChild(h);
+    if (t.info) { const i = document.createElement("span"); i.className = "ruleinfo"; i.textContent = t.info; d.appendChild(i); }
     const kws = document.createElement("div"); kws.className = "kws";
     for (const k of t.stark || []) { const s = document.createElement("span"); s.className = "kw stark"; s.textContent = k; s.title = "Eindeutiger Begriff (zählt stark)"; kws.appendChild(s); }
     for (const k of t.schwach || []) { const s = document.createElement("span"); s.className = "kw schwach"; s.textContent = k; s.title = "Unterstützender Begriff (zählt schwach)"; kws.appendChild(s); }
-    d.append(h, kws); body.appendChild(d);
+    d.appendChild(kws); body.appendChild(d);
   }
   $("#rulesdlg").showModal();
 }
@@ -1585,7 +1619,10 @@ function renderRow(it) {
       inp.value = it[f]; inp.setAttribute("aria-label", f === "nachname" ? "Nachname" : "Vorname"); inp.disabled = it.status === "applied";
       inp.oninput = () => { it[f] = inp.value; it.manual[f] = true; inp.classList.toggle("missing", f === "nachname" && !inp.value.trim()); updatePreview(it); updateActions(); };
       c.appendChild(inp);
-      if (f === "nachname") { const s = document.createElement("div"); s.className = "src"; s.textContent = (it.manual.nachname || it.manual.vorname) ? "Von Hand eingetragen" : "Quelle: " + it.nameSrc; c.appendChild(s); }
+      if (f === "nachname") {
+        const txt = (it.manual.nachname || it.manual.vorname) ? "Von Hand eingetragen" : it.nameSrc ? "Quelle: " + it.nameSrc : "";
+        if (txt) { const s = document.createElement("div"); s.className = "src"; s.textContent = txt; c.appendChild(s); }
+      }
     }
   }
 
@@ -1921,6 +1958,7 @@ function init() {
   initDrop();
   $("#merge").onclick = mergeSelected;
   $("#splitok").onclick = doSplit;
+  $("#bundle").onclick = bundleByType;
   $("#splitcancel").onclick = closeSplit;
   $("#splitdlg").addEventListener("cancel", (e) => {
     // Esc schließt zuerst nur die Vergrößerung, erst der zweite Esc den Dialog
@@ -1938,6 +1976,9 @@ function init() {
   $("#pvprev").onclick = () => { if (pv.doc && pv.page > 1) { pv.page--; pvRender(); } };
   $("#pvnext").onclick = () => { if (pv.doc && pv.page < pv.doc.numPages) { pv.page++; pvRender(); } };
   $("#pvcopy").onclick = () => pv.it && copyAll(pv.it, $("#pvcopy"));
+  // „Mit Prüfauftrag kopieren“: Prüftext aus regeln.js vor den Dokumenttext setzen
+  if (R.pruefauftrag) $("#pvcheck").onclick = () => pv.it && copyAll(pv.it, $("#pvcheck"), R.pruefauftrag);
+  else $("#pvcheck").classList.add("hidden");
   $("#pvrot").onclick = async () => {
     if (!pv.it) return;
     const i = pv.doc ? pv.page - 1 : 0;
