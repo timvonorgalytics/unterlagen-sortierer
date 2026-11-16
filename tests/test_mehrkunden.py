@@ -31,6 +31,7 @@ async def main():
 
             # A) Ordnermodus: zwei Personen im selben Ordner → je Person ein Unterordner (Standard)
             await pg.goto(URL)
+            await pg.evaluate("R.namenErkennen = true")
             await pg.evaluate("async () => { const r = await navigator.storage.getDirectory(); try { await r.removeEntry('scans', { recursive: true }); } catch {} }")
             await put(pg, ["Scan_0002.pdf", "Scan_0004.pdf"])
             await pg.click("#pick")
@@ -77,6 +78,7 @@ async def main():
 
             # C) Dateimodus (ZIP): Unterordner je Person als Pfade im ZIP (Standard)
             await pg.goto(APP_FILE)
+            await pg.evaluate("R.namenErkennen = true")
             await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0002.pdf"), str(DOCS_DIR / "Scan_0004.pdf")])
             await pg.wait_for_function("state.items.length === 2 && !state.busy", timeout=240000)
             async with pg.expect_download() as dl:

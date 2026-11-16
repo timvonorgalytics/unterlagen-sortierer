@@ -145,7 +145,11 @@ button, input, select { font: inherit; color: inherit; }
 .empty p { margin: 8px 0; color: var(--ink); max-width: 58ch; font-size: 15.5px; }
 .empty p.sub { color: var(--muted); font-size: 14px; margin-top: 14px; }
 .tablewrap { overflow-x: auto; background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; }
+/* Ohne Namenserkennung (regeln.js, Standard) kommt der Name nur aus der Werkzeugleiste –
+   die Namens-Spalten entfallen dann ganz */
+.tablewrap.no-names .namecol { display: none; }
 table { border-collapse: collapse; width: 100%; min-width: 980px; }
+.tablewrap.no-names table { min-width: 760px; }
 th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 11px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--sheet); }
 td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
@@ -393,7 +397,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <table>
       <thead><tr>
         <th><input type="checkbox" id="all" checked aria-label="Alle auswählen"></th>
-        <th></th><th>Datei</th><th>Dokumenttyp</th><th>Nachname</th><th>Vorname</th><th>Neuer Name</th><th>Status</th>
+        <th></th><th>Datei</th><th>Dokumenttyp</th><th class="namecol">Nachname</th><th class="namecol">Vorname</th><th>Neuer Name</th><th>Status</th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
@@ -1613,7 +1617,7 @@ function renderRow(it) {
   }
 
   for (const f of ["nachname", "vorname"]) {
-    const c = td();
+    const c = td("namecol");
     if (ready || it.status === "applied") {
       const inp = document.createElement("input"); inp.type = "text"; inp.className = "name" + (f === "nachname" && !it.nachname ? " missing" : "");
       inp.value = it[f]; inp.setAttribute("aria-label", f === "nachname" ? "Nachname" : "Vorname"); inp.disabled = it.status === "applied";
@@ -1931,6 +1935,7 @@ function init() {
     $("#pick").textContent = "Dateien wählen";
     setStatus("Hinweis: Dieser Browser kann Ordner nicht direkt bearbeiten – die umbenannten Dateien werden als ZIP-Datei gespeichert. Mit Microsoft Edge oder Google Chrome arbeitet das Programm direkt im Ordner.");
   }
+  $("#tablewrap").classList.toggle("no-names", R.namenErkennen === false);
   $("#muster").value = store.get("muster", R.dateiname || "{Nachname}_{Vorname}_{Dokumenttyp}");
 
   for (const p of PLACEHOLDERS) {

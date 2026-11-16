@@ -32,9 +32,15 @@ SO GEHT'S
      Beim ersten Mal fragt der Browser, ob das Programm den Ordner
      bearbeiten darf: "Dateien bearbeiten" bzw. "Zulassen" wählen.
 
-  2. Das Programm liest die Dateien und erkennt je Dokument den Typ
-     und den Namen - auch wenn Unterlagen mehrerer Personen gemischt
-     im Ordner liegen.
+  2. Das Programm liest die Dateien und erkennt je Dokument den Typ.
+     Den NAMEN tragen Sie oben in der Werkzeugleiste ein - einmal
+     fuer alle markierten Zeilen ("In markierte Zeilen eintragen").
+     So wird immer der geprüfte Fallname verwendet.
+     (Ihre IT kann in programm\regeln.js mit "namenErkennen: true"
+     zusätzlich die automatische Namenserkennung aus den Dokumenten
+     einschalten - dann erscheinen Namens-Spalten in der Tabelle,
+     z. B. wenn Unterlagen mehrerer Personen gemischt eingelesen
+     werden.)
      Die WERKZEUGLEISTE bleibt beim Rollen durch die Liste immer
      oben sichtbar: "Alle" an/aus, die Zahl der markierten Zeilen,
      das Namensfeld und "Zu einer PDF zusammenführen".

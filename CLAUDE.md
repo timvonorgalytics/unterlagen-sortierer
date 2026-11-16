@@ -94,8 +94,11 @@ VERSION            Versionsnummer für das Release-ZIP
   am aufgedruckten Kürzel erkannt („Anlage EK“). Begriffe so wählen, dass sich stark-Begriffe
   zweier Typen nicht doppeln (sonst nie „sicher“); Belehrungs-Wörter wie „Widerspruch“ gehören
   beim Typ Widerspruch nur als Phrase („lege ich Widerspruch“) in stark, sonst feuert er auf
-  jedem Bescheid. `namenErkennen: false` (regeln.js) schaltet findName je Kunde ab (nur noch
-  Fallname über die Werkzeugleiste); `pruefauftrag` ist der Vorspann für „Mit Prüfauftrag
+  jedem Bescheid. `namenErkennen` (regeln.js) steuert findName: STANDARD ist false (Tims
+  Default seit 1.5.1) – der Name kommt NUR aus der Werkzeugleiste, die Tabelle versteckt die
+  Namens-Spalten (`#tablewrap.no-names` + `.namecol`); true schaltet die Erkennung samt
+  Spalten ein (z. B. Grundsicherung mit mehreren Personen je Stapel). Die e2e-Tests setzen
+  das Flag nach jedem goto selbst. `pruefauftrag` ist der Vorspann für „Mit Prüfauftrag
   kopieren“ (leer = Knopf versteckt).
 - **findName (Reihenfolge):** Formularfelder
   („Name, Vorname:“; „Familienname/Nachname“ und „Vorname(n)“ auch mit Wert in der NÄCHSTEN Zeile

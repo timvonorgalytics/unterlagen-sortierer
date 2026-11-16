@@ -16,6 +16,7 @@ async def main():
 
         # A) Stapel-Scan laden; das Hintergrund-Lesen holt die restlichen Seiten und setzt den Hinweis
         await pg.goto(APP)
+        await pg.evaluate("R.namenErkennen = true")  # diese Teile testen die zuschaltbare Erkennung
         await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0007_Stapel.pdf")])
         await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
         P.check("Erster Durchgang liest nicht alles", await pg.evaluate("state.items[0].pagesRead < state.items[0].pages"))
@@ -86,6 +87,7 @@ async def main():
 
         # E) Zusammenführen: PDF + Foto → eine PDF mit 2 Seiten
         await pg.goto(APP)
+        await pg.evaluate("R.namenErkennen = true")  # diese Teile testen die zuschaltbare Erkennung
         await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0002.pdf"), str(DOCS_DIR / "Foto_Ausweis.jpg")])
         await pg.wait_for_function("state.items.length === 2 && !state.busy", timeout=240000)
         P.check("Werkzeugleiste zeigt Markierung", await pg.is_visible("#merge") and not await pg.evaluate("$('#merge').disabled")
@@ -116,6 +118,7 @@ async def main():
 
         # G) Sortieren: Seite an eine neue Position ziehen → neuer Trennvorschlag auf der neuen Reihenfolge
         await pg.goto(APP)
+        await pg.evaluate("R.namenErkennen = true")  # diese Teile testen die zuschaltbare Erkennung
         await pg.set_input_files("#filepick", [str(DOCS_DIR / "Scan_0007_Stapel.pdf")])
         await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
         await pg.wait_for_function("state.items[0].pagesRead === state.items[0].pages", timeout=240000)

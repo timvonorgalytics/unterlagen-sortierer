@@ -18,6 +18,7 @@ P = Pruefer("Ordnermodus")
 
 async def fresh(pg, nomove=False):
     await pg.goto(URL)
+    await pg.evaluate("R.namenErkennen = true")
     await pg.evaluate("""async (docs) => { const root = await navigator.storage.getDirectory();
       try { await root.removeEntry('scans', { recursive: true }); } catch {}
       const d = await root.getDirectoryHandle('scans', { create: true });

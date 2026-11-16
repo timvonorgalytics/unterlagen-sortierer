@@ -22,9 +22,11 @@ window.REGELN = {
   // Typ, wenn nichts passt
   unbekannt: "Sonstiges",
 
-  // Namen aus dem Dokument erkennen? false = die Tabelle zeigt keine erkannten
-  // Namen; es gilt nur der oben eingetragene Fallname ("In markierte Zeilen eintragen").
-  namenErkennen: true,
+  // Namen aus dem Dokument erkennen? Standard: false – der Name wird nur oben in der
+  // Werkzeugleiste eingetragen ("In markierte Zeilen eintragen"), die Tabelle zeigt
+  // keine Namens-Spalten. true = das Programm liest Namen aus den Dokumenten
+  // (z. B. wenn Unterlagen mehrerer Personen gemischt eingelesen werden).
+  namenErkennen: false,
 
   // Text vor dem erkannten Dokumenttext, wenn "Mit Prüfauftrag kopieren" gedrückt wird
   // (zum Einfügen in den DSGVO-konformen KI-Assistenten). Leer lassen = Knopf ausblenden.

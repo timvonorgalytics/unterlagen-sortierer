@@ -15,6 +15,8 @@ P = Pruefer("Dateimodus")
 
 async def run(pg, setup_js=None):
     await pg.goto(APP)
+    # Diese Teile testen die (per regeln.js zuschaltbare) Namenserkennung
+    await pg.evaluate("R.namenErkennen = true; document.querySelector('#tablewrap').classList.remove('no-names')")
     if setup_js: await pg.evaluate(setup_js)
     await pg.set_input_files("#filepick", DOCS)
     await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
@@ -25,7 +27,17 @@ async def main():
         b = await p.chromium.launch()
         pg = await b.new_page(accept_downloads=True, viewport={"width": 1440, "height": 1100})
         errs = []; pg.on("pageerror", lambda e: errs.append(str(e)))
-        # A) ohne Vorgabe
+        # 0) Standard ab Werk: KEINE Namenserkennung – Spalten versteckt, Name kommt aus der Leiste
+        await pg.goto(APP)
+        await pg.set_input_files("#filepick", DOCS[:1])
+        await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
+        P.check("Standard: Namens-Spalten versteckt", await pg.evaluate(
+            "document.querySelector('#tablewrap').classList.contains('no-names') && getComputedStyle(document.querySelector('td.namecol')).display === 'none'"))
+        P.check("Standard: Name fehlt bis zur Eingabe", await pg.evaluate("rowState(state.items[0])[0]") == "miss")
+        await pg.fill("#vNach", "Fallname"); await pg.fill("#vVor", "Erika")
+        await pg.click("#vApply")
+        P.check("Leisten-Name landet im Dateinamen", (await pg.evaluate("buildName(state.items[0])")).startswith("Fallname_Erika_"))
+        # A) mit eingeschalteter Erkennung: ohne Vorgabe
         for r in await run(pg):
             P.check(f"Typ {r['d']}", r['t'] == TYP[r['d']], f"→ {r['t']}")
             P.check(f"Name {r['d']}", r['n'] == PERS[r['d']], f"→ '{r['n']}' ({r['src']})")

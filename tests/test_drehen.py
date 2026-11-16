@@ -17,6 +17,7 @@ async def main():
 
         # A) Automatische Dreh-Erkennung: um 90 Grad verdrehter Scan wird trotzdem erkannt
         await pg.goto(APP)
+        await pg.evaluate("R.namenErkennen = true")  # diese Teile testen die zuschaltbare Erkennung
         await pg.set_input_files("#filepick", GEDREHT)
         await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
         it = await pg.evaluate("({t: state.items[0].type, n: state.items[0].nachname + ' ' + state.items[0].vorname, rot: (state.items[0].pageRot||[])[0]})")
@@ -49,6 +50,7 @@ async def main():
 
         # B) Drehen von Hand in der Vorschau (gerades Dokument)
         await pg.goto(APP)
+        await pg.evaluate("R.namenErkennen = true")  # diese Teile testen die zuschaltbare Erkennung
         await pg.set_input_files("#filepick", str(DOCS_DIR / "Rentenanpassung_digital.pdf"))
         await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
         await pg.click("button.thumbbox")
@@ -64,6 +66,7 @@ async def main():
 
         # C) Vorschau im Ordnermodus (Datei nur mit handle, ohne file-Objekt)
         await pg.goto(APP)
+        await pg.evaluate("R.namenErkennen = true")  # diese Teile testen die zuschaltbare Erkennung
         await pg.set_input_files("#filepick", DOCS)
         await pg.wait_for_function("state.items.length && !state.busy", timeout=240000)
         r = await pg.evaluate("""(async () => {

@@ -2,6 +2,15 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.5.1 – 2026-11-16
+
+- **Name nur noch oben – neuer Standard:** Der Fallname wird einmal in der
+  Werkzeugleiste eingetragen und per Klick auf die markierten Zeilen
+  angewendet; die Tabelle zeigt keine Namens-Spalten mehr. Die
+  automatische Namenserkennung aus den Dokumenten bleibt als Option für
+  andere Einsatzfälle (regeln.js, `namenErkennen: true` – dann erscheinen
+  die Spalten wieder).
+
 ## 1.5.0 – 2026-11-16
 
 Die Dokumenttypen kommen jetzt direkt aus der Praxis – abgestimmt mit den
