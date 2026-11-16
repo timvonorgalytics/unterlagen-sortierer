@@ -271,6 +271,15 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
 .ptype.vage { background: var(--raised); color: var(--muted); font-weight: 500; }
 :root[data-theme="dark"] .ptype { background: hsl(var(--h) 25% 18%); color: hsl(var(--h) 55% 85%); }
 :root[data-theme="dark"] .ptype.vage { background: var(--raised); color: var(--muted); }
+/* Hilfe-Dialog */
+dialog.help { width: min(760px, 94vw); }
+.steps { margin: 0 0 6px; padding-left: 22px; }
+.steps li { margin: 0 0 12px; }
+.dlgbody h3 { margin: 18px 0 8px; font: 600 14.5px/1.3 var(--font-text); }
+.knows { margin: 0; padding-left: 22px; }
+.knows li { margin: 0 0 9px; }
+.steps li, .knows li { line-height: 1.5; }
+
 /* Regeln-Ansicht */
 .rule { padding: 10px 0; border-bottom: 1px solid var(--line); }
 .rule:last-child { border-bottom: 0; }
@@ -336,6 +345,7 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
     <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Zm-1 10L4.3 8.3l1.1-1.1L7 8.8l3.6-3.6 1.1 1.1L7 11Z"/></svg>
     100&nbsp;% lokal
   </span>
+  <button class="btn" id="help">Hilfe</button>
   <button class="btn" id="theme" title="Zwischen heller und dunkler Ansicht wechseln">Dunkle Ansicht</button>
   <button class="btn" id="rules">Erkennungsregeln</button>
 </header>
@@ -449,6 +459,48 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   </div>
   <!-- Liegt IM Dialog, damit die Vergrößerung über dem modalen Dialog (Top-Layer) erscheint -->
   <div class="zoom hidden" id="zoom"><img id="zoomimg" alt="Vergrößerte Seitenansicht"></div>
+</dialog>
+
+<dialog class="split help" id="helpdlg" aria-label="Hilfe">
+  <div class="dlghead"><h2>So funktioniert der Unterlagen-Sortierer</h2></div>
+  <div class="dlgbody">
+    <ol class="steps">
+      <li><strong>Ordner wählen</strong> – oder Dateien bzw. einen ganzen Ordner einfach ins Fenster ziehen.
+        Beim ersten Mal fragt der Browser: „Dateien bearbeiten“ zulassen.</li>
+      <li><strong>Liste prüfen.</strong> Das Programm erkennt je Dokument den Typ
+        (<span class="state ok">Sicher</span> ist eindeutig, <span class="state check">Bitte prüfen</span> kurz ansehen).
+        Ein Klick aufs Vorschaubild öffnet die Vorschau: Pfeiltasten ←/→ blättern die Seiten, ↑/↓ wechseln das Dokument.</li>
+      <li><strong>Namen eintragen.</strong> Zeilen ankreuzen (Shift-Klick markiert eine ganze Reihe),
+        oben den geprüften Fallnamen eintippen und auf „In markierte Zeilen eintragen“ klicken.
+        So lassen sich nacheinander mehrere Personen benennen, ohne zu scrollen.</li>
+      <li><strong>Unten rechts speichern.</strong> Die umbenannten Kopien kommen je Person in einen
+        Unterordner von „umbenannt“ (fertig für die eAkte), die Originale wandern unverändert nach
+        „verarbeitet“ – der Scan-Ordner zeigt immer nur die offene Arbeit, auch nach einem Neustart.
+        Ein Protokoll (CSV, mit Excel lesbar) liegt jedes Mal bei.</li>
+    </ol>
+    <h3>Gut zu wissen</h3>
+    <ul class="knows">
+      <li><strong>Sortieren und teilen …</strong> (an jeder mehrseitigen PDF): Seiten ansehen, mit der Maus
+        umsortieren, Trennstellen anklicken, „drehen“ je Seite, „Nach Dokumenttyp bündeln“ schiebt
+        Zusammengehöriges zusammen. Leere Rückseiten werden erkannt und weggelassen.</li>
+      <li><strong>Zusammenführen:</strong> Zeilen ankreuzen → „… Dateien zusammenführen“ in der Leiste.
+        Ein Fenster zeigt Reihenfolge, „weglassen“ und den Namensvorschlag, bevor etwas passiert.</li>
+      <li><strong>KI-Assistent (über die Zwischenablage):</strong> In der Vorschau kopieren „Text kopieren“ und
+        „Mit Prüfauftrag kopieren“ das ganze Dokument für euren DSGVO-konformen KI-Assistenten.
+        Im Teilen-Dialog sortiert „Sortier-Auftrag kopieren“ → Antwort → „KI-Antwort einfügen“
+        durcheinander gescannte Seiten automatisch.</li>
+      <li><strong>Verdrehte Seiten</strong> erkennt das Programm von selbst und speichert die Kopie gerade;
+        „Seite drehen“ korrigiert von Hand.</li>
+      <li><strong>Eingang:</strong> Das Datum oben füllt den Baustein {Eingang} im Dateinamen; der Haken setzt
+        „Eingang: TT.MM.JJJJ“ in Rot auf die erste Seite jeder Kopie.</li>
+      <li><strong>Die Originale werden nie verändert.</strong> Alles läuft auf diesem Rechner –
+        es werden keine Daten übertragen.</li>
+    </ul>
+  </div>
+  <div class="dlgfoot">
+    <div class="dlginfo">Mehr Details stehen in der Datei „LIESMICH.txt“ im Ordner „programm“.</div>
+    <button class="btn" id="helpclose">Schließen</button>
+  </div>
 </dialog>
 
 <dialog class="split" id="mergedlg" aria-label="Dateien zusammenführen">
@@ -2050,6 +2102,8 @@ function init() {
   $("#filepick").onchange = (e) => { if (e.target.files.length) pickFiles(e.target.files); e.target.value = ""; };
   $("#muster").oninput = () => { store.set("muster", $("#muster").value); state.items.forEach(updatePreview); };
   $("#rescan").onclick = rescanFolder;
+  $("#help").onclick = () => $("#helpdlg").showModal();
+  $("#helpclose").onclick = () => $("#helpdlg").close();
   $("#rules").onclick = openRules;
   $("#rulesclose").onclick = () => $("#rulesdlg").close();
   $("#vNach").oninput = updateActions; $("#vVor").oninput = updateActions;

@@ -17,6 +17,8 @@ eine Internetverbindung ist nicht nötig.
 STARTEN
   Doppelklick auf "Unterlagen-Sortierer.html" (die einzige Datei im
   obersten Ordner). Das Programm öffnet sich im Browser.
+  Der Knopf "Hilfe" oben rechts zeigt diese Anleitung in Kurzform
+  direkt im Programm.
 
   Öffnet sich dabei nicht Edge oder Chrome, liegen in diesem Ordner
   zwei Helfer: "Start mit Edge.bat" (Windows) bzw.

@@ -2,6 +2,13 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.6.1 – 2026-11-16
+
+- **Hilfe im Programm:** Neuer Knopf „Hilfe“ oben rechts – zeigt den
+  4-Schritte-Ablauf und die Besonderheiten (Teilen, Zusammenführen,
+  KI-Knöpfe, Drehen, Eingangsstempel, Ablageweg) als Fenster direkt in
+  der App. Die ausführliche Anleitung bleibt die LIESMICH.txt.
+
 ## 1.6.0 – 2026-11-16
 
 - **Zusammenführen mit Vorschau-Fenster:** Der Knopf zählt mit („3 Dateien

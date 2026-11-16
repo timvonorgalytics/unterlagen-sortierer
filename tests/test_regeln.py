@@ -90,6 +90,14 @@ async def main():
         P.check("Starke und schwache Chips", n_stark > 50 and n_schwach > 50, (n_stark, n_schwach))
         await pg.click("#rulesclose")
         P.check("Regeln-Dialog geschlossen", await pg.evaluate("!document.querySelector('#rulesdlg').open"))
+        # Hilfe-Dialog: Anleitung direkt im Programm
+        await pg.click("#help")
+        P.check("Hilfe-Dialog offen", await pg.evaluate("document.querySelector('#helpdlg').open"))
+        hilfe = await pg.inner_text("#helpdlg")
+        P.check("Hilfe erklärt die vier Schritte", all(s in hilfe for s in
+                ["Ordner wählen", "Namen eintragen", "speichern", "Gut zu wissen", "Originale werden nie verändert"]), hilfe[:160])
+        await pg.click("#helpclose")
+        P.check("Hilfe-Dialog geschlossen", await pg.evaluate("!document.querySelector('#helpdlg').open"))
         P.check("Keine JS-Fehler", not errs, errs[:3])
         await b.close()
     P.ende()

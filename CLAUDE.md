@@ -194,7 +194,9 @@ VERSION            Versionsnummer für das Release-ZIP
   BEIDES: wird gespeichert UND Ziel für Benennen/Zusammenführen – bewusst EIN Konzept).
   Filter „Nur zu prüfende anzeigen“
   (`applyRowFilter`, bewusst nur beim Neuzeichnen, damit Zeilen nicht beim Tippen verschwinden).
-  „Erkennungsregeln“ (Kopfzeile) öffnet die Read-only-Ansicht aller Typen/Begriffe (`openRules()`).
+  „Erkennungsregeln“ (Kopfzeile) öffnet die Read-only-Ansicht aller Typen/Begriffe (`openRules()`);
+  „Hilfe“ daneben zeigt den 4-Schritte-Ablauf + Besonderheiten als statischen Dialog `#helpdlg`
+  (Inhalt doppelt bewusst den LIESMICH-Kern – bei Funktionsänderungen BEIDE pflegen).
 - **localStorage** nur für Programmeinstellungen (Dateinamen-Muster, Stempel an/aus, Ansicht
   hell/dunkel). Nie Namen, Daten oder Inhalte speichern – auch das Eingangsdatum nicht.
 
