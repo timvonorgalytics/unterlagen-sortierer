@@ -439,12 +439,37 @@ dialog.split::backdrop { background: rgba(0, 0, 0, .45); }
   <div class="dlgfoot">
     <button class="btn" id="bundle" disabled
       title="Alle Seiten gleichen Dokumenttyps zusammenschieben und je Typ eine Trennstelle setzen – vor dem Teilen prüfbar und änderbar">Nach Dokumenttyp bündeln</button>
+    <button class="btn" id="sortcopy" disabled
+      title="Sortier-Auftrag samt Seitentexten in die Zwischenablage kopieren – zum Einfügen in den DSGVO-konformen KI-Assistenten">Sortier-Auftrag kopieren</button>
+    <button class="btn" id="sortpaste" disabled
+      title="Die Antwort des KI-Assistenten (Reihenfolge: 2, 1, 3 …) einfügen – die Seiten werden entsprechend umsortiert, prüfbar vor dem Teilen">KI-Antwort einfügen</button>
     <div class="dlginfo" id="splitinfo"></div>
     <button class="btn" id="splitcancel">Abbrechen</button>
     <button class="btn primary" id="splitok" disabled>Teilen</button>
   </div>
   <!-- Liegt IM Dialog, damit die Vergrößerung über dem modalen Dialog (Top-Layer) erscheint -->
   <div class="zoom hidden" id="zoom"><img id="zoomimg" alt="Vergrößerte Seitenansicht"></div>
+</dialog>
+
+<dialog class="split" id="mergedlg" aria-label="Dateien zusammenführen">
+  <div class="dlghead"><h2>Zu einer PDF zusammenführen</h2></div>
+  <div class="dlgbody">
+    <p class="hint">Die markierten Dateien werden in dieser Reihenfolge zu EINER PDF-Datei verbunden.
+      Karten lassen sich mit der Maus umsortieren, „weglassen“ nimmt eine Datei heraus.
+      Die Originale bleiben unverändert und werden nur abgewählt.</p>
+    <div class="pages" id="mergecards"></div>
+    <div class="field" style="margin-top:14px; align-items:center">
+      <span class="label" style="margin:0 4px 0 0">Neuer Dateiname</span>
+      <input type="text" id="mergename" spellcheck="false" aria-label="Dateiname der neuen PDF" style="flex:1 1 280px">
+      <span class="hint" style="margin:0">.pdf</span>
+    </div>
+    <p class="why warn hidden" id="mergewarn" style="max-width:none">Die Dateien haben verschiedene Dokumenttypen – bitte den Typ der neuen Zeile danach prüfen.</p>
+  </div>
+  <div class="dlgfoot">
+    <div class="dlginfo" id="mergeinfo"></div>
+    <button class="btn" id="mergecancel">Abbrechen</button>
+    <button class="btn primary" id="mergeok">Zusammenführen</button>
+  </div>
 </dialog>
 
 <div class="pv hidden" id="preview">
@@ -800,6 +825,8 @@ function findDate(text) {
 function clean(v) { return String(v || "").trim().replace(/[<>:"/\\|?*\x00-\x1F]/g, "").replace(/\s+/g, "-"); }
 function buildName(item) {
   const ext = "." + item.name.split(".").pop().toLowerCase();
+  // Im Zusammenführen-Dialog von Hand vergebener Name: gilt fest, Muster greift nicht
+  if (item.fixedName) return (String(item.fixedName).replace(/[<>:"/\\|?*\x00-\x1F]/g, "").trim().slice(0, 150) || "Dokument") + ext;
   const orig = item.name.replace(/\.[^.]+$/, "");
   let s = setting("muster")
     .replace(/\{Nachname\}/gi, clean(item.nachname) || "Unbekannt")
@@ -1237,6 +1264,25 @@ function bundleByType() {
   renderSplitPages();
   updateSplitInfo();
 }
+/* Sortieren mit dem KI-Assistenten (offline-konform über die Zwischenablage):
+   "Sortier-Auftrag kopieren" legt Auftrag + nummerierte Seitentexte in die Zwischenablage;
+   die Antwort im festen Format "Reihenfolge: 2, 1, 3" übernimmt "KI-Antwort einfügen". */
+function copySortAuftrag(btn) {
+  const teile = split.order.map((o, i) => `=== Seite ${i + 1} ===\n${(split.pages[o].text || "").trim() || "(leere Seite)"}`);
+  copyText(R.sortierauftrag + "\n\n" + teile.join("\n\n"), btn);
+}
+function pasteSortAntwort() {
+  const raw = prompt("Antwort des KI-Assistenten hier einfügen (Format: Reihenfolge: 2, 1, 3):") || "";
+  const zahlen = raw.match(/\d+/g);
+  if (!zahlen) { setStatus("In der eingefügten Antwort wurde keine Reihenfolge gefunden.", undefined, true); return; }
+  const n = split.order.length, neu = [];
+  for (const z of zahlen.map(Number)) if (z >= 1 && z <= n && !neu.includes(z - 1)) neu.push(z - 1);
+  for (let i = 0; i < n; i++) if (!neu.includes(i)) neu.push(i);   // nicht genannte Seiten hinten anhängen
+  split.order = neu.map((disp) => split.order[disp]);              // Zahlen = Nummern aus dem kopierten Auftrag
+  split.cuts.clear(); split.auto = true;
+  renderSplitPages(); proposeCuts(); updateSplitInfo();
+  setStatus("Die Seiten wurden nach der eingefügten Reihenfolge sortiert – bitte das Ergebnis prüfen.");
+}
 /* Seite per Drag & Drop an eine neue Position ziehen: Trennvorschlag wird neu berechnet */
 function movePage(from, to) {
   const [x] = split.order.splice(from, 1);
@@ -1323,6 +1369,7 @@ function updateSplitInfo() {
     : segs.length === 1 && dropped ? "Ohne weggelassene Seiten speichern" : "Teilen";
   $("#splitok").disabled = split.running || !segs.length || (segs.length < 2 && !dropped && !orderChanged);
   $("#bundle").disabled = split.running;
+  $("#sortcopy").disabled = split.running; $("#sortpaste").disabled = split.running;
 }
 async function doSplit() {
   const segs = splitSegments();
@@ -1371,10 +1418,64 @@ async function doSplit() {
 }
 function closeSplit() { split.abort = true; try { $("#splitdlg").close(); } catch {} }
 
-async function mergeSelected() {
+/* ---------- Zusammenführen-Dialog: erst sehen und ändern, dann machen ---------- */
+const merge = { items: [], order: [], drop: new Set(), drag: undefined, touched: false };
+function mergeKept() { return merge.order.filter((o) => !merge.drop.has(o)).map((o) => merge.items[o]); }
+function mergeTypes(kept) { return new Set(kept.filter((k) => k.manual.type || k.typeSure).map((k) => k.type)); }
+// Namensvorschlag nach dem Dateinamen-Muster (Typ = gemeinsamer sicherer Typ, sonst der der ersten Datei)
+function mergeVorschlag(kept) {
+  if (!kept.length) return "";
+  const first = kept[0], types = mergeTypes(kept);
+  const typ = types.size === 1 ? [...types][0] : (first.type || UNKNOWN);
+  return buildName({ name: "x.pdf", nachname: first.nachname, vorname: first.vorname, type: typ, datum: first.datum }).replace(/\.pdf$/i, "");
+}
+function openMerge() {
   const sel = state.items.filter((i) => i.selected && i.status === "done");
   if (sel.length < 2 || state.busy) return;
-  if (!confirm(`${sel.length} markierte Dateien werden in der Reihenfolge der Liste zu einer PDF-Datei zusammengeführt. Die Originale bleiben unverändert. Fortfahren?`)) return;
+  merge.items = sel; merge.order = sel.map((_, i) => i); merge.drop = new Set(); merge.drag = undefined; merge.touched = false;
+  renderMergeCards(); updateMergeInfo();
+  $("#mergedlg").showModal();
+}
+function renderMergeCards() {
+  const wrap = $("#mergecards"); wrap.innerHTML = "";
+  merge.order.forEach((orig, disp) => {
+    const it = merge.items[orig];
+    const card = document.createElement("div"); card.className = "page"; card.draggable = true;
+    card.title = "Mit der Maus in eine neue Reihenfolge ziehen";
+    card.classList.toggle("drop", merge.drop.has(orig));
+    card.ondragstart = (e) => { merge.drag = disp; e.dataTransfer.effectAllowed = "move"; };
+    card.ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
+    card.ondrop = (e) => {
+      e.preventDefault();
+      if (merge.drag !== undefined && merge.drag !== disp) { const [x] = merge.order.splice(merge.drag, 1); merge.order.splice(disp, 0, x); renderMergeCards(); updateMergeInfo(); }
+      merge.drag = undefined;
+    };
+    const img = document.createElement("img"); img.src = it.thumb || ""; img.alt = "";
+    const no = document.createElement("span"); no.className = "pno"; no.textContent = (it.originalName || it.name) + (it.pages > 1 ? ` – ${it.pages} Seiten` : "");
+    const ty = document.createElement("span"); ty.className = "ptype"; ty.textContent = it.type || "?"; ty.style.setProperty("--h", hue(it.type || "?"));
+    const skip = document.createElement("button"); skip.type = "button"; skip.className = "skippage"; skip.textContent = merge.drop.has(orig) ? "dazunehmen" : "weglassen";
+    skip.title = "Diese Datei beim Zusammenführen weglassen";
+    skip.onclick = () => { if (merge.drop.has(orig)) merge.drop.delete(orig); else merge.drop.add(orig); renderMergeCards(); updateMergeInfo(); };
+    card.append(img, no, ty, skip);
+    wrap.appendChild(card);
+  });
+}
+function updateMergeInfo() {
+  const kept = mergeKept();
+  const seiten = kept.reduce((s, k) => s + (k.pages || 1), 0);
+  $("#mergeinfo").textContent = kept.length < 2
+    ? "Bitte mindestens zwei Dateien dazunehmen."
+    : `Ergibt EINE PDF-Datei mit ${seiten} Seiten aus ${kept.length} Dateien.`;
+  $("#mergewarn").classList.toggle("hidden", mergeTypes(kept).size <= 1);
+  if (!merge.touched) $("#mergename").value = mergeVorschlag(kept);
+  $("#mergeok").disabled = kept.length < 2 || state.busy;
+}
+async function doMerge() {
+  const sel = mergeKept();
+  if (sel.length < 2 || state.busy) return;
+  const vorschlag = mergeVorschlag(sel);
+  const eingabe = $("#mergename").value.trim();
+  $("#mergedlg").close();
   state.busy = true; updateActions(); setStatus("Die Dateien werden zusammengeführt …");
   try {
     const out = await PDFLib.PDFDocument.create();
@@ -1403,13 +1504,14 @@ async function mergeSelected() {
     }
     const data = await out.save();
     const ni = newItem({
-      name: uniqueListName(names[0].replace(/\.[^.]+$/, "") + "_gesamt.pdf"), data, size: data.length,
+      name: uniqueListName((eingabe || vorschlag || names[0].replace(/\.[^.]+$/, "") + "_gesamt") + ".pdf"), data, size: data.length,
       pages: pagesN, thumb: sel[0].thumb, thumbRot: 0, text,
       pageTexts: allRead ? pageTexts : [], pagesRead: allRead ? pageTexts.length : 0,
       pageRot: Array(pagesN).fill(0),                 // Drehungen stecken schon in der Datei
       ocr: anyOcr,
       partInfo: "Zusammengeführt aus " + names.map((n) => `„${n}“`).join(", "),
     });
+    if (eingabe && eingabe !== vorschlag) ni.fixedName = eingabe;   // von Hand vergebener Name gilt fest
     analyse(ni);
     // Hatten die Quellen verschiedene erkannte Typen, wird der Typ NICHT stillschweigend
     // von einer Datei übernommen, sondern zur Prüfung gelb markiert.
@@ -1669,6 +1771,7 @@ function updateActions() {
   $("#apply").disabled = state.busy || sel.length === 0;
   $("#vApply").disabled = state.busy || !$("#vNach").value.trim() || !sel.length;
   $("#merge").disabled = state.busy || sel.length < 2 || !window.PDFLib;
+  $("#merge").textContent = sel.length >= 2 ? `${sel.length} Dateien zusammenführen …` : "Zusammenführen …";
   $("#tbinfo").textContent = `${sel.length} ${sel.length === 1 ? "Datei" : "Dateien"} markiert`;
   const wählbar = state.items.filter((i) => i.status === "done");
   for (const cb of [$("#all"), $("#tball")]) {
@@ -1961,9 +2064,14 @@ function init() {
   $("#apply").onclick = apply;
   $("#onlycheck").onchange = () => state.items.forEach(applyRowFilter);
   initDrop();
-  $("#merge").onclick = mergeSelected;
+  $("#merge").onclick = openMerge;
+  $("#mergeok").onclick = doMerge;
+  $("#mergecancel").onclick = () => $("#mergedlg").close();
+  $("#mergename").oninput = () => { merge.touched = true; };
   $("#splitok").onclick = doSplit;
   $("#bundle").onclick = bundleByType;
+  if (R.sortierauftrag) { $("#sortcopy").onclick = () => copySortAuftrag($("#sortcopy")); $("#sortpaste").onclick = pasteSortAntwort; }
+  else { $("#sortcopy").classList.add("hidden"); $("#sortpaste").classList.add("hidden"); }
   $("#splitcancel").onclick = closeSplit;
   $("#splitdlg").addEventListener("cancel", (e) => {
     // Esc schließt zuerst nur die Vergrößerung, erst der zweite Esc den Dialog

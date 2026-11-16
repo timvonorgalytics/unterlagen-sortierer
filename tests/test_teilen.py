@@ -92,10 +92,21 @@ async def main():
         await pg.wait_for_function("state.items.length === 2 && !state.busy", timeout=240000)
         P.check("Werkzeugleiste zeigt Markierung", await pg.is_visible("#merge") and not await pg.evaluate("$('#merge').disabled")
                 and "2 Dateien markiert" in await pg.inner_text("#tbinfo"))
-        await pg.click("#merge")  # confirm() wird automatisch bestätigt
+        P.check("Knopf zählt mit", await pg.inner_text("#merge") == "2 Dateien zusammenführen …")
+        await pg.click("#merge")   # öffnet den Zusammenführen-Dialog
+        P.check("Dialog zeigt die Karten", await pg.evaluate("document.querySelector('#mergedlg').open && document.querySelectorAll('#mergecards .page').length === 2"))
+        P.check("Mischtyp-Hinweis im Dialog", not await pg.evaluate("document.querySelector('#mergewarn').classList.contains('hidden')"))
+        P.check("Namensvorschlag nach Muster", (await pg.evaluate("document.querySelector('#mergename').value")).startswith("Mustermann_Erika_"))
+        P.check("Ergibt-Zeile stimmt", "2 Seiten aus 2 Dateien" in await pg.inner_text("#mergeinfo"))
+        # Eine Karte weglassen → gesperrt; wieder dazunehmen → frei
+        await pg.click("#mergecards .page .skippage >> nth=0")
+        P.check("Unter 2 Dateien gesperrt", await pg.evaluate("$('#mergeok').disabled"))
+        await pg.click("#mergecards .page .skippage >> nth=0")
+        P.check("Wieder frei", not await pg.evaluate("$('#mergeok').disabled"))
+        await pg.click("#mergeok")
         await pg.wait_for_function("state.items.length === 3 && !state.busy", timeout=240000)
         m = await pg.evaluate("state.items.map(i => ({ n: i.name, pg: i.pages, d: !!i.derived, sel: i.selected, mi: i.mergedInto || '', sure: !!i.typeSure }))")
-        P.check("Neue Gesamt-PDF", m[2]['d'] and m[2]['pg'] == 2 and m[2]['n'].endswith("_gesamt.pdf"), m)
+        P.check("Neue Gesamt-PDF", m[2]['d'] and m[2]['pg'] == 2 and m[2]['n'].endswith(".pdf"), m)
         P.check("Originale abgewählt und gekennzeichnet", not m[0]['sel'] and not m[1]['sel'] and m[0]['mi'] == m[2]['n'] and m[1]['mi'] == m[2]['n'], m)
         P.check("Mischtypen → bitte prüfen", m[2]['sure'] is False, m[2])
         P.check("Zusammenführen danach gesperrt (nur 1 markiert)", await pg.evaluate("$('#merge').disabled"))
@@ -144,6 +155,22 @@ async def main():
         P.check("Bündeln: 2 Dateien, leere Seite weggelassen", await pg.inner_text("#splitok") == "In 2 Dateien teilen",
                 await pg.inner_text("#splitinfo"))
         P.check("Nach Bündeln weiter änderbar", await pg.evaluate("(() => { movePage(0, 1); return split.order.join(','); })()") == "0,1,3,4,2")
+        await pg.click("#splitcancel")
+
+        # I) Sortieren mit dem KI-Assistenten über die Zwischenablage
+        await pg.click("button.split")
+        await pg.wait_for_function("!split.running && split.pages.length === 5", timeout=240000)
+        await pg.evaluate("""window.__kopiert = ""; navigator.clipboard.writeText = async (t) => { window.__kopiert = t; };""")
+        await pg.click("#sortcopy")
+        await pg.wait_for_function("window.__kopiert.length > 0", timeout=10000)
+        P.check("Sortier-Auftrag mit Format und Seitentexten", await pg.evaluate(
+            "__kopiert.includes('Reihenfolge: 2, 1, 3') && __kopiert.includes('=== Seite 3 ===') && __kopiert.includes('Kontoauszug 09/2026')"))
+        await pg.evaluate("window.prompt = () => 'Reihenfolge: 3, 1, 2, 4, 5'")
+        await pg.click("#sortpaste")
+        await pg.wait_for_timeout(300)
+        P.check("KI-Antwort sortiert die Seiten um", await pg.evaluate("split.order.join(',')") == "2,0,1,3,4",
+                await pg.evaluate("split.order.join(',')"))
+        P.check("Status bestätigt das Sortieren", "bitte das Ergebnis prüfen" in await pg.inner_text("#status"))
         await pg.click("#splitcancel")
 
         P.check("Keine JS-Fehler", not errs, errs[:3])

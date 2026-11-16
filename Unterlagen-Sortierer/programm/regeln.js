@@ -32,6 +32,11 @@ window.REGELN = {
   // (zum Einfügen in den DSGVO-konformen KI-Assistenten). Leer lassen = Knopf ausblenden.
   pruefauftrag: "Bitte prüfe das folgende Verwaltungsdokument: Um welchen Dokumenttyp handelt es sich? Fehlen Angaben oder Unterschriften, gibt es unplausible oder widersprüchliche Angaben? Welche Rückfragen sollten gestellt werden? Antworte kurz in Stichpunkten.",
 
+  // Auftrag für "Sortier-Auftrag kopieren" im Teilen-Dialog: Der KI-Assistent bekommt die
+  // Seitentexte und antwortet in einem festen Format, das "KI-Antwort einfügen" versteht.
+  // Leer lassen = beide Knöpfe ausblenden.
+  sortierauftrag: "Du bekommst die erkannten Texte der Seiten eines eingescannten Dokuments, nummeriert in der aktuellen Reihenfolge (Seite 1 bis N). Bringe die Seiten in die fachlich richtige Reihenfolge – z. B. Kontoauszüge nach Auszugsnummer und Seitenzahl, Formulare nach aufgedruckter Seitennummer, Briefe nach Datum. Antworte mit GENAU EINER Zeile im Format\nReihenfolge: 2, 1, 3\nund sonst nichts – keine Erklärungen.",
+
   dokumenttypen: [
     // ---------- Anträge (Jobcenter / Sozialamt) ----------
     { name: "HA", info: "Hauptantrag (Jobcenter)",

@@ -118,9 +118,10 @@ async def main():
           b.pagesRead = 0; b.pageTexts = [];   // Quelle gilt als nicht fertig gelesen
           b.pages = 2;
         })()""")
-        await pg.evaluate("mergeSelected()")
-        await pg.wait_for_function("state.items.some(i => (i.name||'').includes('_gesamt'))", timeout=240000)
-        g = await pg.evaluate("(() => { const i = state.items.find(x => x.name.includes('_gesamt')); return { pt: (i.pageTexts||[]).length, pr: i.pagesRead }; })()")
+        await pg.evaluate("openMerge()")
+        await pg.evaluate("doMerge()")
+        await pg.wait_for_function("state.items.some(i => (i.partInfo||'').includes('Zusammengeführt aus'))", timeout=240000)
+        g = await pg.evaluate("(() => { const i = state.items.find(x => (x.partInfo||'').includes('Zusammengeführt aus')); return { pt: (i.pageTexts||[]).length, pr: i.pagesRead }; })()")
         P.check("Merge übernimmt keine verrutschten Seitentexte", g["pt"] == 0 and g["pr"] == 0, g)
 
         P.check("Keine JS-Fehler", not errs, errs[:3])

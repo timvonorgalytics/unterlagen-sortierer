@@ -2,6 +2,23 @@
 
 Alle nennenswerten Änderungen am Unterlagen-Sortierer werden hier festgehalten.
 
+## 1.6.0 – 2026-11-16
+
+- **Zusammenführen mit Vorschau-Fenster:** Der Knopf zählt mit („3 Dateien
+  zusammenführen …“) und öffnet statt der nackten Browser-Rückfrage ein
+  Fenster in der Bediensprache des Teilen-Dialogs: die Dateien als Karten
+  in Verbindungs-Reihenfolge (per Maus umsortierbar), „weglassen“ je
+  Karte, ein anpassbares Namensfeld mit Vorschlag nach dem
+  Dateinamen-Muster und ein Hinweis bei gemischten Dokumenttypen. Erst
+  „Zusammenführen“ im Fenster erstellt die PDF.
+- **Sortieren mit dem KI-Assistenten (offline-konform):** Im Teilen-Dialog
+  kopiert „Sortier-Auftrag kopieren“ einen festen Auftrag samt der
+  erkannten Seitentexte; die Antwort des DSGVO-konformen KI-Assistenten
+  (immer im Format „Reihenfolge: 2, 1, 3“) übernimmt „KI-Antwort
+  einfügen“ – die Seiten sortieren sich entsprechend, prüfbar vor dem
+  Teilen. So lassen sich z. B. durcheinander gescannte Kontoauszüge
+  automatisch ordnen. Auftragstext in `regeln.js` anpassbar.
+
 ## 1.5.1 – 2026-11-16
 
 - **Name nur noch oben – neuer Standard:** Der Fallname wird einmal in der

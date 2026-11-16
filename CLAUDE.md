@@ -121,6 +121,13 @@ VERSION            Versionsnummer für das Release-ZIP
   ANGEZEIGTEN Reihenfolge: neuer Abschnitt, sobald eine Seite *sicher* einen anderen Typ hat).
   Seiten sind per Drag & Drop umsortierbar (`split.order`, `movePage()` → Vorschlag wird neu
   berechnet); Trennstellen per Klick änderbar; leere Seiten (inkRatio) sind vorab „weglassen“.
+  „Nach Dokumenttyp bündeln“ (`bundleByType`) gruppiert Seiten je Typ (leere ans Ende) und
+  setzt Trennstellen je Gruppe – nur die ANSICHT, vor dem Teilen weiter änderbar (Tims Regel).
+  KI-Sortieren über die Zwischenablage (offline bleibt offline): `copySortAuftrag()` kopiert
+  `R.sortierauftrag` + nummerierte Seitentexte; `pasteSortAntwort()` parst die Antwort
+  („Reihenfolge: 2, 1, 3“ – Zahlen beziehen sich auf die Nummern des kopierten Auftrags,
+  fehlende Seiten werden hinten angehängt) und sortiert `split.order` um; Knöpfe versteckt,
+  wenn `sortierauftrag` leer ist.
   `doSplit()` erzeugt per **pdf-lib** je Abschnitt eine neue PDF in Anzeige-Reihenfolge
   (`copyPages` mit beliebiger Index-Folge); 1 Abschnitt + umsortiert/bereinigt → „Sortiert
   speichern“/eine Datei (`_sortiert`/`_bereinigt`). Original bleibt unverändert, wird abgewählt.
@@ -137,13 +144,17 @@ VERSION            Versionsnummer für das Release-ZIP
   `fullText(it)` = alle Seiten. `it.bgLock` verhindert, dass backgroundScan und copyAll dieselben
   Seiten doppelt lesen. Zweck: kompletten Text in den DSGVO-konformen KI-Assistenten der Kunden
   kopieren. Kopier-Knöpfe in der Vorschau und an „Erkannten Text anzeigen“ je Zeile.
-- **Zusammenführen:** Knopf „Zu einer PDF zusammenführen“ sitzt in der WERKZEUGLEISTE
+- **Zusammenführen:** Knopf (zählt mit: „N Dateien zusammenführen …“) sitzt in der WERKZEUGLEISTE
   (`#toolbar`, `position: sticky` – klebt beim Scrollen oben; enthält außerdem „Alle“-Haken
   `#tball`, Markier-Zähler `#tbinfo` und das Namensfeld samt `#vApply`; gesperrt statt versteckt,
   wenn < 2 markiert). Unten rechts bleibt NUR der Speichern-Knopf (Tims UX-Regel). Ebenso Tims
   Struktur-Regel (v1.4.0): Kopfzeile und Einmal-Einstellungen (Ordner, Eingang, Muster) scrollen
   weg, NUR die Werkzeugleiste pinnt; Datenschutz-Satz als Schild „100 % lokal“ mit title-Tooltip.
-  `mergeSelected()`: Baut per pdf-lib eine PDF aus allen markierten Dateien in Listenreihenfolge; JPG/PNG
+  Der Klick öffnet den ZUSAMMENFÜHREN-DIALOG `#mergedlg` (openMerge/renderMergeCards/
+  updateMergeInfo/doMerge – KEIN confirm() mehr): Karten in Verbindungs-Reihenfolge (Drag &
+  Drop), „weglassen“ je Karte (unter 2 → gesperrt), Namensfeld mit Vorschlag nach Muster
+  (`mergeVorschlag`; abweichende Eingabe → `item.fixedName`, das buildName() fest übernimmt),
+  Mischtyp-Hinweis `#mergewarn`. Erst „Zusammenführen“ baut die PDF. doMerge(): Baut per pdf-lib eine PDF aus allen markierten Dateien in Listenreihenfolge; JPG/PNG
   werden als Seiten eingebettet (`embedJpg`/`embedPng`). Quellen bleiben in der Liste, werden abgewählt
   und zeigen `mergedInto` („Zusammengeführt in …“). Hatten die Quellen verschiedene SICHERE Typen, wird
   das Ergebnis `typeSure=false` (gelb) statt still nach einer Datei benannt. „Verwerfen“ entfernt eine
@@ -255,6 +266,7 @@ für alle Kunden gleich. Kundenspezifische Dateien nicht in dieses Repo eincheck
       BB, HG, SE, SV, UF, VE, Nwdigital, Mantelbogen, Profilbogen (aktuell Platzhalter-Regeln
       „Anlage XX“ bzw. Wortsuche); Eintrag „Brief“ ist bewusst nicht als Typ angelegt (nicht
       erkennbar – bleibt Sonstiges)
-- [ ] Automatisches Seiten-Ordnen (unsortierter Kontoauszug/WBA): bewusst zurückgestellt –
-      mit Tim einen Plan machen, wie das mit dem Business-GPT des Kunden umsetzbar wäre
-      (einfache Fälle wie „Seite 2 von 5“ gingen auch regelbasiert)
+- [x] Automatisches Seiten-Ordnen: gelöst in 1.6.0 über den KI-Assistenten-Weg
+      („Sortier-Auftrag kopieren“ / „KI-Antwort einfügen“ im Teilen-Dialog, Zwischenablage,
+      offline-konform). Regelbasierte Erkennung („Seite 2 von 5“) bleibt eine mögliche
+      spätere Ergänzung

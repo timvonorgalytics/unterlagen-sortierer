@@ -120,20 +120,31 @@ STAPEL-SCANS SORTIEREN UND TEILEN
   Datei. Das Original bleibt unverändert und wird nur abgewählt;
   sobald alle daraus erstellten Dateien gespeichert sind, wandert
   es beim Speichern automatisch mit nach "verarbeitet".
+  SORTIEREN MIT DEM KI-ASSISTENTEN: "Sortier-Auftrag kopieren"
+  legt einen festen Auftrag samt der erkannten Seitentexte in die
+  Zwischenablage - einfügen in den DSGVO-konformen KI-Assistenten,
+  dessen Antwort (immer im Format "Reihenfolge: 2, 1, 3") kopieren
+  und über "KI-Antwort einfügen" übernehmen: Die Seiten sortieren
+  sich entsprechend, das Ergebnis bleibt vor dem Teilen prüfbar.
+  So lassen sich z. B. durcheinander gescannte Kontoauszüge
+  automatisch ordnen. Der Auftragstext steht in programm\regeln.js.
   Tipp: Seiten aus verschiedenen Dateien sortieren geht über
   "erst zusammenführen, dann sortieren".
 
 DATEIEN ZUSAMMENFÜHREN
   Gehören mehrere Dateien zusammen (z. B. einzeln gescannte Seiten
-  eines Kontoauszugs): nur diese Zeilen ankreuzen und in der
-  Werkzeugleiste "Zu einer PDF zusammenführen" klicken. Es entsteht eine
-  neue PDF-Datei mit allen Seiten; auch Fotos (JPG/PNG) werden als
-  Seiten übernommen. Die Originale bleiben unverändert in der Liste
-  und zeigen, in welche Datei sie eingeflossen sind; nach dem
-  Speichern der neuen Datei wandern sie mit nach "verarbeitet".
-  Hatten die
-  Dateien verschiedene Dokumenttypen, wird die neue Datei gelb
-  markiert - dann bitte den Typ selbst wählen.
+  eines Kontoauszugs): die Zeilen ankreuzen und in der Werkzeugleiste
+  auf "... Dateien zusammenführen" klicken. Ein Fenster zeigt die
+  Dateien als Karten in der Reihenfolge, in der sie verbunden werden:
+  mit der Maus umsortierbar, "weglassen" nimmt eine versehentlich
+  markierte Datei heraus, und der vorgeschlagene Dateiname lässt
+  sich direkt anpassen. Erst "Zusammenführen" erstellt die neue
+  PDF-Datei; auch Fotos (JPG/PNG) werden als Seiten übernommen.
+  Die Originale bleiben unverändert in der Liste und zeigen, in
+  welche Datei sie eingeflossen sind; nach dem Speichern der neuen
+  Datei wandern sie mit nach "verarbeitet". Hatten die Dateien
+  verschiedene Dokumenttypen, weist schon das Fenster darauf hin
+  und die neue Zeile wird gelb markiert.
   "Verwerfen" entfernt eine neu erstellte Datei wieder aus der Liste.
 
 DATEINAME ANPASSEN
